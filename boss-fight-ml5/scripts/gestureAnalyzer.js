@@ -5,6 +5,11 @@ class GestureAnalyzer {
     this.comboReady = false;
     this.currentGesture = 'NONE';
     this.cooldown = 0;
+
+    // Temporal Filtering (HCI Pattern)
+    this.candidateGesture = 'NONE';
+    this.candidateFrames = 0;
+    this.requiredFrames = 6; // Frames manteniendo el gesto para activarlo
   }
 
   analyze(hand) {
@@ -30,38 +35,63 @@ class GestureAnalyzer {
     let tipDist = dist(thumbTip.x, thumbTip.y, indexTip.x, indexTip.y);
     let indexMiddleDist = dist(indexTip.x, indexTip.y, middleTip.x, middleTip.y);
 
+    // 0. FIST (Puño) - Estado Basal / Navegación (Todos los dedos encogidos hacia la palma)
+    let isFist = dIndex < 90 && dMiddle < 90 && dRing < 90 && dPinky < 90;
+
     // Reglas de heurística (Rituales)
-    // 1. AZUL (Pinch): Pulgar e índice tocándose o muy cerca.
-    let isPinch = tipDist < 30;
+    // 1. AZUL (Pinch): Pulgar e índice tocándose, los demás no importan (o estirados)
+    let isPinch = tipDist < 30 && dMiddle > 90; // Exigimos que el medio esté libre para no confundir con puño
 
     // 2. ROJO (Palma abierta): Todos los dedos extendidos lejos de la muñeca.
     let isOpenPalm = dIndex > 100 && dMiddle > 100 && dRing > 100 && dPinky > 100 && !isPinch;
 
     // 3. PÚRPURA (Signo de Paz / Intento): Índice y medio levantados, anular y meñique encogidos.
-    let isPeace = dIndex > 100 && dMiddle > 100 && dRing < 85 && dPinky < 85;
+    let isPeace = dIndex > 100 && dMiddle > 100 && dRing < 85 && dPinky < 85 && !isFist;
 
     // 4. EXPANSIÓN DE DOMINIO: Dedos cruzados (Paz + Medio e Índice muy juntos).
     let isCrossed = isPeace && indexMiddleDist < 25;
 
-    let detected = 'NONE';
+    let rawDetection = 'NONE';
     
-    // Prioridad invertida para evitar solapamientos
-    if (isCrossed) detected = 'DOMAIN';
-    else if (isPeace) detected = 'PURPLE_ATTEMPT';
-    else if (isPinch) detected = 'BLUE';
-    else if (isOpenPalm) detected = 'RED';
+    // Switch de Prioridad: El Puño tiene máxima prioridad para evitar spam al mover la mano
+    if (isFist) rawDetection = 'FIST';
+    else if (isCrossed) rawDetection = 'DOMAIN';
+    else if (isPeace) rawDetection = 'PURPLE_ATTEMPT';
+    else if (isPinch) rawDetection = 'BLUE';
+    else if (isOpenPalm) rawDetection = 'RED';
 
-    this.updateBuffer(detected);
-    
-    // Prevenir spam de habilidades por frame
-    if (millis() > this.cooldown) {
-        let evaluated = this.evaluate(detected);
-        this.currentGesture = evaluated;
-        if (evaluated !== 'NONE') {
-            this.cooldown = millis() + 500; // Medio segundo de enfriamiento por ritual
+    // ----------------------------------------------------
+    // TEMPORAL FILTERING (Evitar ráfagas por glitch de ML5)
+    // ----------------------------------------------------
+    if (rawDetection === this.candidateGesture) {
+        this.candidateFrames++;
+    } else {
+        this.candidateGesture = rawDetection;
+        this.candidateFrames = 1;
+    }
+
+    // El PUÑO (Fist) responde rápido para no perder fluidez en el tracking del arma/movimiento
+    if (this.candidateGesture === 'FIST') {
+        this.currentGesture = 'FIST';
+        return 'FIST';
+    }
+
+    // Los rituales necesitan confirmación temporal (ej: 6 frames)
+    if (this.candidateFrames >= this.requiredFrames && this.candidateGesture !== 'NONE') {
+        if (millis() > this.cooldown) {
+            let evaluated = this.evaluate(this.candidateGesture);
+            this.currentGesture = evaluated;
+            
+            if (evaluated !== 'NONE') {
+                this.updateBuffer(evaluated);
+                this.cooldown = millis() + 500; // Cooldown post-ataque
+            }
+        } else {
+            this.currentGesture = 'COOLDOWN'; // Silenciamos durante el cooldown
         }
     } else {
-        this.currentGesture = 'NONE'; // En cooldown
+        // Mientras carga el buffer o navega con la mano abierta sin decisión firme
+        this.currentGesture = 'NONE'; 
     }
 
     return this.currentGesture;
