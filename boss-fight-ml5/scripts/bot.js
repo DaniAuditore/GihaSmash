@@ -5,42 +5,140 @@ class Bot {
     this.w = 50;
     this.h = 50;
     this.hp = 100;
-    this.state = 'IDLE'; // IDLE, EVADING, HIT
-    this.speed = 3;
-    this.targetX = x;
-    this.targetY = y;
+    
+    // Cinemática
+    this.vx = 0;
+    this.vy = 0;
+    this.gravity = 0.8;
+    this.jumpForce = -15;
+    this.friction = 0.9;
+    this.onGround = false;
+    
+    // Máquina de Estados
+    this.state = 'IDLE'; // IDLE, JUMPING, HIT
+    
+    // Jugo
+    this.squash = 1.0;
+    this.stretch = 1.0;
   }
 
-  update(fxManager) {
-    // Si hay un hitstop activo, congelamos la lógica del bot
-    if (fxManager.isHitstopActive() || this.hp <= 0) return;
+  applyPhysics(platform) {
+    if (this.state === 'HIT') return;
 
-    // Lógica básica de evasión/movimiento errático
-    if (frameCount % 45 === 0 && this.state !== 'HIT') {
-        this.targetX = random(100, width - 100);
-        this.targetY = random(100, height - 100);
-        this.state = 'EVADING';
-    }
+    // Aplicar Gravedad
+    this.vy += this.gravity;
+    
+    // Fricción horizontal: Deslizamiento (Knockback friction)
+    this.vx *= this.friction;
 
-    if (this.state === 'EVADING') {
-        this.x = lerp(this.x, this.targetX, 0.08);
-        this.y = lerp(this.y, this.targetY, 0.08);
-        if (abs(this.x - this.targetX) < 5 && abs(this.y - this.targetY) < 5) {
-            this.state = 'IDLE';
+    // Edge Guarding (IA Preventiva): Invertir dirección si intenta caminar fuera del borde
+    if (this.onGround && frameCount % 60 !== 0) { // Ignorar en frames de knockback inicial
+        if (this.x + this.vx < platform.x || this.x + this.w + this.vx > platform.x + platform.w) {
+            this.vx *= -1;
         }
     }
+
+    // Actualizar posición
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Colisión AABB de Suelo (Isla Central)
+    let isOverPlatform = (this.x + this.w > platform.x) && (this.x < platform.x + platform.w);
+
+    if (this.vy >= 0 && isOverPlatform && (this.y + this.h >= platform.y) && (this.y + this.h - this.vy <= platform.y + 20)) {
+      this.y = platform.y - this.h;
+      this.vy = 0;
+      
+      if (!this.onGround) {
+          // Aterrizaje!
+          this.squash = 0.6;
+          this.stretch = 1.4;
+          this.state = 'IDLE';
+      }
+      this.onGround = true;
+    } else {
+      this.onGround = false;
+      if (this.state !== 'HIT') {
+          this.state = 'JUMPING';
+      }
+    }
+
+    // Reseteo Failsafe: Si cae al vacío (Knockback victoria instantánea o reset)
+    if (this.y > height + 100) {
+        this.respawn(platform);
+    }
   }
 
-  draw() {
+  respawn(platform) {
+      this.x = platform.x + platform.w / 2 - this.w / 2;
+      this.y = platform.y - 150;
+      this.vy = 0;
+      this.vx = 0;
+      this.hp -= 20; // Penalización por caer
+      this.state = 'JUMPING';
+  }
+
+  jump() {
+    if (this.onGround && this.state !== 'HIT') {
+      this.vy = this.jumpForce;
+      this.onGround = false;
+      this.state = 'JUMPING';
+      // Stretch on jump
+      this.squash = 1.4;
+      this.stretch = 0.6;
+    }
+  }
+
+  update(fxManager, platform) {
+    // Si hay un hitstop activo, congelamos todo el bot
+    if (fxManager.isHitstopActive() || this.hp <= 0) return;
+
+    this.applyPhysics(platform);
+
+    // Recuperación del Squash/Stretch (Lerp hacia 1.0)
+    this.squash = lerp(this.squash, 1.0, 0.15);
+    this.stretch = lerp(this.stretch, 1.0, 0.15);
+
+    // IA reactiva: Movimiento horizontal y saltos si está en IDLE
+    // IA reactiva
+    if (this.onGround && frameCount % 60 === 0 && random() > 0.4) {
+      // Intenta mantenerse central, o saltar si lo empujan
+      let toCenter = (platform.x + platform.w / 2) - this.x;
+      this.vx = (toCenter > 0 ? 1 : -1) * random(5, 12);
+      if (random() > 0.5) {
+          this.jump();
+      }
+    }
+  }
+
+  draw(platform) {
     if (this.hp <= 0) return; // Muerto
     
     push();
-    fill(this.state === 'HIT' ? color(255, 0, 0) : color(0, 200, 100));
+    
+    // JUICE: Sombra dinámica de la Isla
+    if (this.onGround) {
+        fill(0, 0, 0, 80);
+        noStroke();
+        ellipse(this.x + this.w / 2, platform.y, this.w * 1.5, 10);
+    }
+
+    // Transladar al centro inferior del bot para el escalado (squash/stretch)
+    translate(this.x + this.w / 2, this.y + this.h);
+    
+    // Aplicar deformación visual
+    scale(this.stretch, this.squash);
+    
+    fill(this.state === 'HIT' ? color(255, 0, 0) : (this.state === 'JUMPING' ? color(0, 150, 255) : color(0, 200, 100)));
     stroke(255);
     strokeWeight(2);
-    rect(this.x, this.y, this.w, this.h, 5);
     
-    // HP Bar
+    // Dibujar referenciando el nuevo centro (-w/2, -h)
+    rect(-this.w / 2, -this.h, this.w, this.h, 5);
+    pop();
+
+    // HP Bar (sin deformación)
+    push();
     fill(255, 0, 0);
     noStroke();
     rect(this.x, this.y - 15, this.w, 5);
@@ -48,16 +146,21 @@ class Bot {
     rect(this.x, this.y - 15, map(this.hp, 0, 100, 0, this.w), 5);
     pop();
 
-    if (this.state === 'HIT') {
-        this.state = 'IDLE'; // Reseteamos visualmente rápido, el hitstop maneja la pausa lógica
+    if (this.state === 'HIT' && this.onGround && !fxManager.isHitstopActive()) {
+        this.state = 'IDLE'; 
     }
   }
 
-  takeDamage(amount, fxManager) {
+  takeDamage(amount, attackX, fxManager) {
     if (this.hp <= 0) return;
     
     this.hp -= amount;
     this.state = 'HIT';
+    
+    // JUICE: Knockback basado en el origen del golpe
+    let knockbackDir = (this.x + this.w / 2 > attackX) ? 1 : -1;
+    this.vx = knockbackDir * 12; // Empuje!
+    this.vy = -5; // Un pequeño saltito al recibir daño
     
     // "Juice" trigger
     fxManager.triggerHitstop(60); 
