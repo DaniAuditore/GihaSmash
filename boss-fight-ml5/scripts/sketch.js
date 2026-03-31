@@ -89,40 +89,37 @@ function draw() {
       background(20, 20, 25);
   }
 
-  // 1. Inputs y Actualizaciones
-  handHandler.update(width, height);
+  // Pre-analizar la mano para saber el gesto antes de mover el cursor
+  let currentHand = null;
+  if (handHandler.predictions.length > 0 && handHandler.predictions[0].confidence > 0.8) {
+      currentHand = handHandler.predictions[0];
+  }
+  let gesture = gestureAnalyzer.analyze(currentHand);
+
+  // 1. Inputs y Actualizaciones (Le pasamos el gesto para el bloqueo de navegación)
+  handHandler.update(width, height, gesture);
   
-  // Analizar rituales
-  let gesture = gestureAnalyzer.analyze(handHandler.currentHand);
-  
-  if (gesture !== 'NONE') {
+  if (gesture !== 'NONE' && gesture !== 'FIST' && gesture !== 'COOLDOWN') {
       lastTechniqueText = gesture;
       techniqueTextTimer = millis() + 1000;
       
-      // Aplicar técnicas si detectamos colisión principal
       let attackBox = handHandler.getAttackBounds();
-      let isColliding = bot.checkCollision(attackBox);
       
+      // Centralized attack triggering (ignoring AABB target to allow global ritual hits)
       if (gesture === 'DOMAIN') {
           domainActive = true;
-          domainEndTime = millis() + 5000; // 5 segundos de expansión
+          domainEndTime = millis() + 5000;
           fx.triggerScreenshake(10, 30);
       } 
       else if (gesture === 'BLUE') {
-          if (isColliding && !fx.isHitstopActive()) {
-               bot.takeDamage(10, attackBox.x + attackBox.w/2, fx, 'BLUE');
-          }
+          bot.takeDamage(10, attackBox.x + attackBox.w/2, fx, 'BLUE');
       } 
       else if (gesture === 'RED') {
-          if (isColliding && !fx.isHitstopActive()) {
-               bot.takeDamage(20, attackBox.x + attackBox.w/2, fx, 'RED');
-          }
+          bot.takeDamage(20, attackBox.x + attackBox.w/2, fx, 'RED');
       } 
       else if (gesture === 'PURPLE') {
-          fx.triggerScreenshake(30, 40); // Gran impacto
-          if (isColliding && !fx.isHitstopActive()) {
-               bot.takeDamage(50, attackBox.x + attackBox.w/2, fx, 'PURPLE');
-          }
+          fx.triggerScreenshake(30, 40);
+          bot.takeDamage(50, attackBox.x + attackBox.w/2, fx, 'PURPLE');
       }
   }
 

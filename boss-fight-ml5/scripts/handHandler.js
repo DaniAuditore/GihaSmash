@@ -20,28 +20,27 @@ class HandHandler {
     this.currentHand = null;
   }
 
-  update(gameWidth, gameHeight) {
+  update(gameWidth, gameHeight, currentGesture) {
     this.isTracking = false;
     this.currentHand = null;
 
     if (this.predictions.length > 0) {
       const hand = this.predictions[0];
       
-      // Strict rule: validamos confianza de la inferencia si está disponible.
       if (hand.confidence > 0.8) {
          this.currentHand = hand;
-         // Data structure change in v1.x: usamos keypoints directos. 
-         // El índice 8 corresponde a index_finger_tip
-         const indexFinger = hand.keypoints[8];
-
-         // Mapear de las coordenadas de la cámara (400x300) al canvas completo invirtiendo X (espejo)
-         this.targetPos.x = map(indexFinger.x, 0, 400, gameWidth, 0);
-         this.targetPos.y = map(indexFinger.y, 0, 300, 0, gameHeight);
          this.isTracking = true;
+
+         // SOLO actualiza su objetivo ("navegar") si el gesto es FIST o NONE
+         if (currentGesture === 'FIST' || currentGesture === 'NONE' || currentGesture === undefined) {
+             const indexFinger = hand.keypoints[8];
+             this.targetPos.x = map(indexFinger.x, 0, 400, gameWidth, 0);
+             this.targetPos.y = map(indexFinger.y, 0, 300, 0, gameHeight);
+         }
       }
     }
 
-    // LERP smoothing estricto (0.15)
+    // LERP smoothing
     this.currentPos.x = lerp(this.currentPos.x, this.targetPos.x, 0.15);
     this.currentPos.y = lerp(this.currentPos.y, this.targetPos.y, 0.15);
   }
