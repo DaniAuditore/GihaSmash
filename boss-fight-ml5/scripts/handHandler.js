@@ -1,4 +1,15 @@
+/**
+ * Interfaz con ML5 Handpose.
+ * Gestiona la detección, interpolación y filtrado por confianza.
+ * @class HandHandler
+ */
 class HandHandler {
+  /**
+   * Inicializa el modelo ML5 y fuerza el backend WebGL para estabilidad.
+   * @param {Object} videoElement - Instancia p5.MediaElement (createCapture).
+   * @performance La instanciación de video ocurre desacoplada de la predicción
+   *              para evadir latencia y tirones de GPU.
+   */
   constructor(videoElement) {
     this.video = videoElement;
     

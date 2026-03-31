@@ -1,3 +1,7 @@
+/**
+ * Motor mínimo de partículas.
+ * @class Particle
+ */
 class Particle {
   constructor(x, y, type = 'NORMAL') {
     this.x = x;
@@ -37,6 +41,9 @@ class Particle {
 }
 
 class FXManager {
+  /**
+   * Instancia el gestor de "Juice" base mediante las directrices de Game Feel de JW Nijman.
+   */
   constructor() {
     this.particles = [];
     this.shakeDuration = 0;
@@ -44,11 +51,21 @@ class FXManager {
     this.hitstopTimer = 0;
   }
 
+  /**
+   * Distorsión forzada mediante "screenshake" global instanciada desde el origen (0,0).
+   * @param {number} intensity - Modificador de la amplitud `dx,dy`.
+   * @param {number} durationFrames - Contador regresivo de *Frames* afectados.
+   */
   triggerScreenshake(intensity, durationFrames) {
     this.shakeIntensity = intensity;
     this.shakeDuration = durationFrames;
   }
 
+  /**
+   * Invoca el hitstop (congelación global). 
+   * Impide la interpolación natural del juego en el loop siguiente.
+   * @param {number} durationMs - Milisegundos que el Game Loop principal debería ser suspendido (Normal: 60ms).
+   */
   triggerHitstop(durationMs) {
     this.hitstopTimer = millis() + durationMs;
   }

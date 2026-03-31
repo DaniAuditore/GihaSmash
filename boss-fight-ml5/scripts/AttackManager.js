@@ -1,4 +1,12 @@
+/**
+ * Controla el flujo de ataques y tiempos de espera (Cooldown).
+ * Implementa la lógica de 'Input Buffering' para la ventana de tolerancia.
+ * @class AttackManager
+ */
 class AttackManager {
+  /**
+   * Instancia contadores base e inicializa duraciones (en milisegundos).
+   */
   constructor() {
     this.skills = {
       'BLUE': { lastTime: 0, cooldownDuration: 2000, bufferTimer: 0 },
@@ -8,7 +16,16 @@ class AttackManager {
     this.bufferWindow = 200; // 200ms de ventana para "Input Buffer"
   }
 
-  // Intento de disparo cuando el usuario hace el gesto
+  /**
+   * Intenta disparar gestionando el Input-Buffer si el usuario anticipó la recuperación.
+   * @param {string} type - Tipo de magia de combate ('RED', 'BLUE', 'PURPLE').
+   * @param {number} x - Abscisa donde detonará el efecto físico.
+   * @param {number} y -  Coordenada paralela a x.
+   * @param {Object} bot - Receptor de la fuerza física y daño en memoria.
+   * @param {Object} fx - Gestor de renderizado Juice.
+   * @param {Object} uiManager - Responsable del parpadeo visual en pantalla tras cooldown fallido.
+   * @returns {boolean} Emisión limpia sin fallo técnico o temporal.
+   */
   tryAttack(type, x, y, bot, fx, uiManager) {
     if (!this.skills[type]) return false;
     

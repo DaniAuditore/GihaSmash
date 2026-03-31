@@ -1,3 +1,7 @@
+/**
+ * Responsable de la HUD mínima, indicación de enfriamiento y retroalimentación de la UI.
+ * @class UIManager
+ */
 class UIManager {
   constructor() {
     this.icons = {
@@ -6,7 +10,10 @@ class UIManager {
     };
   }
 
-  // Se llama si intentas atacar pero el ataque está en cooldown
+  /**
+   * Transición interactiva en pantalla informando que la instancia en curso colisionó con el cooldown.
+   * @param {string} type - 'RED' | 'BLUE'.
+   */
   triggerDenial(type) {
     if (this.icons[type]) {
       this.icons[type].shakeFrames = 15; // 15 frames de vibración
@@ -20,6 +27,12 @@ class UIManager {
     }
   }
 
+  /**
+   * Actualiza e infiere de manera local el HUD Radial de enfriamiento para las habilidades.
+   * Modifica en el Context global de p5 por medio de "push()" y "pop()".
+   * @param {Object} attackManager - Inyector que almacena el buffer de recargas actuales.
+   * @performance No carga imágenes. Solo calcula senos y cosenos polígonos base.
+   */
   draw(attackManager) {
     push();
     

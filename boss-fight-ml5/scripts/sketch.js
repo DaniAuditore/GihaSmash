@@ -14,6 +14,10 @@ let stars = [];
 let lastTechniqueText = "";
 let techniqueTextTimer = 0;
 
+/**
+ * Estructura estática principal que representa el suelo donde se asienta la física del Bot.
+ * @class Platform
+ */
 class Platform {
   constructor(x, y, w, h) {
     this.x = x;
@@ -33,6 +37,11 @@ class Platform {
   }
 }
 
+/**
+ * Motor Central P5 instanciado a 60fps.
+ * @performance Este frame ha sido blindado desvinculando la cámara (`constraints` manuales) 
+ * impidiendo que las dependencias asíncronas de la GPU recorten la interpolación a 30fps máximos.
+ */
 function setup() {
   createCanvas(1280, 720);
   pixelDensity(1); // 🔧 EL TRUCO DEL ARQUITECTO: Forzar densidad de píxeles para pantallas Retina/4K

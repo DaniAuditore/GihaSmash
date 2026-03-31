@@ -1,4 +1,12 @@
+/**
+ * Analiza gestos discretos a partir de la geometría de Handpose.
+ * Utiliza distancias euclidianas y filtros de rebote (debounce).
+ * @class GestureAnalyzer
+ */
 class GestureAnalyzer {
+  /**
+   * Crea el analizador con un buffer temporal y estado de cooldown.
+   */
   constructor() {
     this.buffer = [];
     this.lastInput = 'NONE';
@@ -12,6 +20,13 @@ class GestureAnalyzer {
     this.requiredFrames = 6; // Frames manteniendo el gesto para activarlo
   }
 
+  /**
+   * Procesa la malla de handpose evaluando heurísticas euclidianas.
+   * Filtra latencia utilizando frames continuos para evitar ráfagas falsas.
+   * @param {Object} hand - Predicción en crudo devuelta por MediaPipe/TFJS.
+   * @returns {string} ID del Gesto dominante ('FIST', 'BLUE', 'RED', 'NONE')
+   * @performance Ejecución síncrona a 60hz, sujeta directamente a la integridad de los tensores de ML5.
+   */
   analyze(hand) {
     if (!hand || !hand.keypoints) {
       this.currentGesture = 'NONE';

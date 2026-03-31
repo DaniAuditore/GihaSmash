@@ -1,4 +1,14 @@
+/**
+ * Representa la entidad enemiga controlada por IA.
+ * Maneja físicas básicas, colisiones AABB y estado de daño.
+ * @class Bot
+ */
 class Bot {
+  /**
+   * Instancia al Bot enemigo.
+   * @param {number} x - Posición inicial en X.
+   * @param {number} y - Posición inicial en Y.
+   */
   constructor(x, y) {
     this.x = x;
     this.y = y;
@@ -80,6 +90,9 @@ class Bot {
       this.state = 'JUMPING';
   }
 
+  /**
+   * Resuelve el salto sumando gravedad explícita al delta inercial negativo.
+   */
   jump() {
     if (this.onGround && this.state !== 'HIT') {
       this.vy = this.jumpForce;
@@ -156,6 +169,13 @@ class Bot {
     pop();
   }
 
+  /**
+   * Dispara el desacoplamiento lógico tras herir al bot e insta el juice de cámara.
+   * @param {number} amount - Magnitud del HP a deducir.
+   * @param {number} attackX - Origen bidimensional explícito del ataque AABB para el vector de rebote.
+   * @param {Object} fxManager - Instancia compartida externa para llamar las rutinas de Juice.
+   * @param {string} attackType - Modificador direccional ('BLUE' chupa, 'RED' expulsa).
+   */
   takeDamage(amount, attackX, fxManager, attackType = 'NORMAL') {
     // PROTECCIÓN (Guard Clause): Evitar solapamiento de daño o aplicar impacto sobre un bot muerto
     if (this.hp <= 0 || this.state === 'HIT') return;
