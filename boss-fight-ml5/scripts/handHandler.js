@@ -17,16 +17,19 @@ class HandHandler {
     this.targetPos = { x: 0, y: 0 };
     this.isTracking = false;
     this.isLoaded = false;
+    this.currentHand = null;
   }
 
   update(gameWidth, gameHeight) {
     this.isTracking = false;
+    this.currentHand = null;
 
     if (this.predictions.length > 0) {
       const hand = this.predictions[0];
       
       // Strict rule: validamos confianza de la inferencia si está disponible.
       if (hand.confidence > 0.8) {
+         this.currentHand = hand;
          // Data structure change in v1.x: usamos keypoints directos. 
          // El índice 8 corresponde a index_finger_tip
          const indexFinger = hand.keypoints[8];

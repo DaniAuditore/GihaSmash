@@ -1,8 +1,16 @@
 let video;
 let handHandler;
+let gestureAnalyzer;
 let bot;
 let fx;
 let platform;
+
+// Sistema de Domain Expansion (Vacío Infinito)
+let domainActive = false;
+let domainEndTime = 0;
+let stars = [];
+let lastTechniqueText = "";
+let techniqueTextTimer = 0;
 
 class Platform {
   constructor(x, y, w, h) {
@@ -37,27 +45,90 @@ function setup() {
   video.hide();
 
   handHandler = new HandHandler(video);
+  gestureAnalyzer = new GestureAnalyzer();
   bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 50);
   fx = new FXManager();
+
+  // Precargar estrellas para la Expansión de Dominio
+  for (let i = 0; i < 150; i++) {
+      stars.push({ x: random(-width, width), y: random(-height, height), z: random(width) });
+  }
+}
+
+function drawDomain() {
+  push();
+  fill(5, 5, 10, 80); // Rastro (Trails)
+  rect(0, 0, width, height);
+
+  translate(width / 2, height / 2);
+  for (let s of stars) {
+    s.z -= 15; // Velocidad del hiperespacio
+    if (s.z < 1) {
+      s.z = width;
+      s.x = random(-width, width);
+      s.y = random(-height, height);
+    }
+    let sx = map(s.x / s.z, 0, 1, 0, width);
+    let sy = map(s.y / s.z, 0, 1, 0, height);
+    let r = map(s.z, 0, width, 8, 0); // Más grande si está más cerca
+    fill(255);
+    noStroke();
+    circle(sx, sy, r);
+  }
+  pop();
 }
 
 function draw() {
-  background(20, 20, 25);
+  if (domainActive && millis() > domainEndTime) {
+      domainActive = false;
+  }
+
+  if (domainActive) {
+      drawDomain(); // Shader ligero de estrellas para no perder FPS
+  } else {
+      background(20, 20, 25);
+  }
 
   // 1. Inputs y Actualizaciones
   handHandler.update(width, height);
-  bot.update(fx, platform);
-
-  // 2. Lógica de Juego y Colisiones AABB
-  // Para esta prueba inicial: Si detecta la mano con confianza, ataca cíclicamente
-  if (handHandler.isTracking) {
+  
+  // Analizar rituales
+  let gesture = gestureAnalyzer.analyze(handHandler.currentHand);
+  
+  if (gesture !== 'NONE') {
+      lastTechniqueText = gesture;
+      techniqueTextTimer = millis() + 1000;
+      
+      // Aplicar técnicas si detectamos colisión principal
       let attackBox = handHandler.getAttackBounds();
-      if (bot.checkCollision(attackBox)) {
-          if (!fx.isHitstopActive()) {
-              bot.takeDamage(15, attackBox.x + attackBox.w/2, fx);
+      let isColliding = bot.checkCollision(attackBox);
+      
+      if (gesture === 'DOMAIN') {
+          domainActive = true;
+          domainEndTime = millis() + 5000; // 5 segundos de expansión
+          fx.triggerScreenshake(10, 30);
+      } 
+      else if (gesture === 'BLUE') {
+          if (isColliding && !fx.isHitstopActive()) {
+               bot.takeDamage(10, attackBox.x + attackBox.w/2, fx, 'BLUE');
+          }
+      } 
+      else if (gesture === 'RED') {
+          if (isColliding && !fx.isHitstopActive()) {
+               bot.takeDamage(20, attackBox.x + attackBox.w/2, fx, 'RED');
+          }
+      } 
+      else if (gesture === 'PURPLE') {
+          fx.triggerScreenshake(30, 40); // Gran impacto
+          if (isColliding && !fx.isHitstopActive()) {
+               bot.takeDamage(50, attackBox.x + attackBox.w/2, fx, 'PURPLE');
           }
       }
   }
+
+  // Ralentización del bot por Expansión de Dominio
+  let currentDomainMod = domainActive ? 0.1 : 1.0;
+  bot.update(fx, platform, currentDomainMod);
 
   // 3. Render
   push();
@@ -73,21 +144,32 @@ function draw() {
   
   pop(); // Fin área afectada por screenshake
 
+  // UI - Feedback texto
+  if (millis() < techniqueTextTimer) {
+      push();
+      textSize(80);
+      textAlign(CENTER, CENTER);
+      textStyle(BOLD);
+      fill(255, 255, 255, map(techniqueTextTimer - millis(), 0, 1000, 0, 255));
+      text(lastTechniqueText, width/2, height/2 - 100);
+      pop();
+  }
+
   // UI (No afectada por el shake)
   push();
   fill(255);
   textSize(20);
-  text(`FPS: ${floor(frameRate())}`, 10, 30);
+  text(`FPS: ${floor(frameRate())}`, width - 150, 30);
   
   if (!handHandler.isLoaded) {
       fill(255, 200, 0);
-      text("Cargando modelo ML5 Handpose...", 10, 60);
+      text("Cargando modelo ML5 Handpose...", width - 350, 60);
   } else if (!handHandler.isTracking) {
       fill(255, 100, 100);
-      text("Cámara: Buscando mano (Confianza > 0.8 requerida)", 10, 60);
+      text("Cámara: Buscando mano", width - 250, 60);
   } else {
       fill(0, 255, 100);
-      text("Objetivo detectado.", 10, 60);
+      text("Objetivo detectado.", width - 200, 60);
   }
 
   if (bot.hp <= 0) {
@@ -97,4 +179,7 @@ function draw() {
       text("BOT DESTRUIDO", width/2, height/2);
   }
   pop();
+  
+  // HUD Diagnóstico (Consola del Arquitecto)
+  gestureAnalyzer.drawDebug(10, 10);
 }

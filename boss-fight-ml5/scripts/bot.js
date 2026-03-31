@@ -91,7 +91,10 @@ class Bot {
     }
   }
 
-  update(fxManager, platform) {
+  update(fxManager, platform, timeMod = 1.0) {
+    // Expansión de Dominio: Ralentizar el update drásticamente (Efecto stop-motion)
+    if (timeMod < 1.0 && frameCount % Math.floor(1 / timeMod) !== 0) return;
+
     // Si hay un hitstop activo, congelamos todo el bot
     if (fxManager.isHitstopActive() || this.hp <= 0) return;
 
@@ -153,7 +156,7 @@ class Bot {
     pop();
   }
 
-  takeDamage(amount, attackX, fxManager) {
+  takeDamage(amount, attackX, fxManager, attackType = 'NORMAL') {
     // PROTECCIÓN (Guard Clause): Evitar solapamiento de daño o aplicar impacto sobre un bot muerto
     if (this.hp <= 0 || this.state === 'HIT') return;
     
@@ -161,15 +164,32 @@ class Bot {
     this.state = 'HIT';
     this.hitFrame = frameCount; // Registrar foto del tiempo actual
     
-    // JUICE: Knockback basado en el origen del golpe
-    let knockbackDir = (this.x + this.w / 2 > attackX) ? 1 : -1;
-    this.vx = knockbackDir * 12; // Empuje!
-    this.vy = -5; // Un pequeño saltito al recibir daño
+    // JUICE: Knockback basado en la técnica
+    let attackCenterRelativeX = attackX - (this.x + this.w / 2);
+    let knockbackDir = (attackCenterRelativeX < 0) ? 1 : -1; // Empuje normal (lejos del ataque)
+    
+    if (attackType === 'BLUE') {
+        // AZUL (Atracción): El bot es sacudido HACIA el ataque
+        this.vx = -knockbackDir * 18; 
+        this.vy = -3;
+    } else if (attackType === 'RED') {
+        // ROJO (Repulsión): El bot es empujado lejos con fuerza tremenda
+        this.vx = knockbackDir * 25;
+        this.vy = -8;
+    } else if (attackType === 'PURPLE') {
+        // PÚRPURA (Nuke): El bot sale volando para atrás sin salvación
+        this.vx = knockbackDir * 40;
+        this.vy = -15;
+    } else {
+        // NORMAL
+        this.vx = knockbackDir * 12;
+        this.vy = -5;
+    }
     
     // "Juice" trigger
     fxManager.triggerHitstop(60); 
-    fxManager.triggerScreenshake(20, 12);
-    fxManager.spawnParticles(this.x + this.w/2, this.y + this.h/2, 30);
+    fxManager.triggerScreenshake(attackType === 'PURPLE' ? 35 : 20, 15);
+    fxManager.spawnParticles(this.x + this.w/2, this.y + this.h/2, attackType === 'PURPLE' ? 60 : 30, attackType);
   }
 
   checkCollision(attackRect) {
