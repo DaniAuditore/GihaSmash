@@ -35,12 +35,22 @@ class Platform {
 
 function setup() {
   createCanvas(1280, 720);
+  pixelDensity(1); // 🔧 EL TRUCO DEL ARQUITECTO: Forzar densidad de píxeles para pantallas Retina/4K
+  frameRate(60); // 🔧 Forzar al engine a no rendirse ante los Hz de la cámara
   
   // Floating Island
   platform = new Platform(width/2 - 300, height - 150, 600, 30);
   
-  // Foco en FPS: Resolución de video pequeña (400x300) para no saturar ML5
-  video = createCapture(VIDEO, () => {
+  // 🔧 Reducir la resolución de captura REAL del hardware de la cámara
+  let constraints = {
+    video: {
+      width: { ideal: 400, max: 400 },
+      height: { ideal: 300, max: 300 },
+      frameRate: { ideal: 60 } // Quitamos el max: 30 que asfixiaba el hardware
+    }
+  };
+  
+  video = createCapture(constraints, () => {
     console.log("Cámara inicializada.");
   });
   video.size(400, 300);

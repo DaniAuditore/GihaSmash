@@ -2,11 +2,19 @@ class HandHandler {
   constructor(videoElement) {
     this.video = videoElement;
     
-    // Inicialización ML5 Handpose Next-Gen (v1.3.1)
-    this.handpose = ml5.handPose(this.video, { maxContinuousChecks: 1, detectionConfidence: 0.8 }, () => {
-        console.log('HandPose Ready');
+    // Inicialización ML5 Handpose Next-Gen
+    const options = { 
+        maxHands: 1, 
+        flipped: false
+    };
+
+    ml5.setBackend("webgl");
+
+    // Instanciación limpia: SOLAMENTE options y callback
+    this.handpose = ml5.handPose(options, () => {
+        console.log('HandPose Ready (WebGL Backend)');
         this.isLoaded = true;
-        // Iniciar detección continua en ML5 v1.x
+        // El video se inyecta estrictamente aquí:
         this.handpose.detectStart(this.video, (results) => {
            this.predictions = results;
         });
