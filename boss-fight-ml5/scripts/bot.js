@@ -16,6 +16,7 @@ class Bot {
     
     // Máquina de Estados
     this.state = 'IDLE'; // IDLE, JUMPING, HIT
+    this.hitFrame = 0; // Temporizador nativo del motor de juego
     
     // Jugo
     this.squash = 1.0;
@@ -23,7 +24,7 @@ class Bot {
   }
 
   applyPhysics(platform) {
-    if (this.state === 'HIT') return;
+    // ELIMINADO el early return de 'HIT' para permitir que el bot sufra knockback y caiga
 
     // Aplicar Gravedad
     this.vy += this.gravity;
@@ -32,7 +33,8 @@ class Bot {
     this.vx *= this.friction;
 
     // Edge Guarding (IA Preventiva): Invertir dirección si intenta caminar fuera del borde
-    if (this.onGround && frameCount % 60 !== 0) { // Ignorar en frames de knockback inicial
+    // Ignorar protección de bordes si está siendo empujado por un golpe (estado HIT)
+    if (this.state !== 'HIT' && this.onGround && frameCount % 60 !== 0) { 
         if (this.x + this.vx < platform.x || this.x + this.w + this.vx > platform.x + platform.w) {
             this.vx *= -1;
         }
@@ -99,9 +101,13 @@ class Bot {
     this.squash = lerp(this.squash, 1.0, 0.15);
     this.stretch = lerp(this.stretch, 1.0, 0.15);
 
-    // IA reactiva: Movimiento horizontal y saltos si está en IDLE
-    // IA reactiva
-    if (this.onGround && frameCount % 60 === 0 && random() > 0.4) {
+    // Sistema robusto de recuperación de estado basado en frameCount
+    if (this.state === 'HIT' && (frameCount - this.hitFrame > 15)) {
+        this.state = 'IDLE';
+    }
+
+    // IA reactiva: Movimiento horizontal y saltos si NO está en HIT
+    if (this.onGround && this.state !== 'HIT' && frameCount % 60 === 0 && random() > 0.4) {
       // Intenta mantenerse central, o saltar si lo empujan
       let toCenter = (platform.x + platform.w / 2) - this.x;
       this.vx = (toCenter > 0 ? 1 : -1) * random(5, 12);
@@ -145,17 +151,15 @@ class Bot {
     fill(0, 255, 0);
     rect(this.x, this.y - 15, map(this.hp, 0, 100, 0, this.w), 5);
     pop();
-
-    if (this.state === 'HIT' && this.onGround && !fxManager.isHitstopActive()) {
-        this.state = 'IDLE'; 
-    }
   }
 
   takeDamage(amount, attackX, fxManager) {
-    if (this.hp <= 0) return;
+    // PROTECCIÓN (Guard Clause): Evitar solapamiento de daño o aplicar impacto sobre un bot muerto
+    if (this.hp <= 0 || this.state === 'HIT') return;
     
     this.hp -= amount;
     this.state = 'HIT';
+    this.hitFrame = frameCount; // Registrar foto del tiempo actual
     
     // JUICE: Knockback basado en el origen del golpe
     let knockbackDir = (this.x + this.w / 2 > attackX) ? 1 : -1;
