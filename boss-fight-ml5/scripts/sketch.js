@@ -4,6 +4,8 @@ let gestureAnalyzer;
 let bot;
 let fx;
 let platform;
+let uiManager;
+let attackManager;
 
 // Sistema de Domain Expansion (Vacío Infinito)
 let domainActive = false;
@@ -48,6 +50,8 @@ function setup() {
   gestureAnalyzer = new GestureAnalyzer();
   bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 50);
   fx = new FXManager();
+  uiManager = new UIManager();
+  attackManager = new AttackManager();
 
   // Precargar estrellas para la Expansión de Dominio
   for (let i = 0; i < 150; i++) {
@@ -100,29 +104,27 @@ function draw() {
   handHandler.update(width, height, gesture);
   
   if (gesture !== 'NONE' && gesture !== 'FIST' && gesture !== 'COOLDOWN') {
-      lastTechniqueText = gesture;
-      techniqueTextTimer = millis() + 1000;
-      
       let attackBox = handHandler.getAttackBounds();
-      
+      let didFire = false;
+
       // Centralized attack triggering (ignoring AABB target to allow global ritual hits)
       if (gesture === 'DOMAIN') {
           domainActive = true;
           domainEndTime = millis() + 5000;
           fx.triggerScreenshake(10, 30);
-      } 
-      else if (gesture === 'BLUE') {
-          bot.takeDamage(10, attackBox.x + attackBox.w/2, fx, 'BLUE');
-      } 
-      else if (gesture === 'RED') {
-          bot.takeDamage(20, attackBox.x + attackBox.w/2, fx, 'RED');
-      } 
-      else if (gesture === 'PURPLE') {
-          fx.triggerScreenshake(30, 40);
-          bot.takeDamage(50, attackBox.x + attackBox.w/2, fx, 'PURPLE');
+          didFire = true;
+      }
+      else if (gesture === 'BLUE' || gesture === 'RED' || gesture === 'PURPLE') {
+          didFire = attackManager.tryAttack(gesture, attackBox.x + attackBox.w/2, attackBox.y + attackBox.h/2, bot, fx, uiManager);
+      }
+
+      if (didFire) {
+          lastTechniqueText = gesture;
+          techniqueTextTimer = millis() + 1000;
       }
   }
 
+  attackManager.update(uiManager);
   // Ralentización del bot por Expansión de Dominio
   let currentDomainMod = domainActive ? 0.1 : 1.0;
   bot.update(fx, platform, currentDomainMod);
@@ -179,4 +181,5 @@ function draw() {
   
   // HUD Diagnóstico (Consola del Arquitecto)
   gestureAnalyzer.drawDebug(10, 10);
+  uiManager.draw(attackManager);
 }
