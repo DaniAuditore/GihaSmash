@@ -92,11 +92,107 @@ function setup() {
   }
 }
 
+let audioEnabled = false;
+let startTimer = 0;
+
 function mousePressed() {
-  if (gameState === 'START') {
+  if (!audioEnabled && audioManager) {
     audioManager.init();
-    gameState = 'PLAYING';
+    audioEnabled = true;
   }
+}
+
+function drawStartMenu(gesture) {
+    background(20, 20, 25);
+    
+    push();
+    // Título
+    fill(255);
+    textAlign(CENTER, TOP);
+    textSize(60);
+    textStyle(BOLD);
+    text("GIHA SMASH", width/2, 60);
+    
+    // Contenedor de instrucciones
+    fill(30, 30, 45, 200);
+    stroke(100);
+    strokeWeight(2);
+    rectMode(CENTER);
+    rect(width/2, height/2 - 20, 800, 400, 15);
+    
+    noStroke();
+    fill(255, 200, 0);
+    textSize(28);
+    text("TÉCNICAS Y GESTOS", width/2, 120);
+    
+    textSize(22);
+    textAlign(LEFT, CENTER);
+    let startX = width/2 - 320;
+    let startY = 180;
+    let lh = 45;
+    
+    fill(255);
+    text("🤚 Básico (Combo): Palma abierta sobre el enemigo", startX, startY);
+    fill(0, 150, 255);
+    text("☝️ Ao (Azul): Dedo índice (Atracción)", startX, startY + lh);
+    fill(255, 50, 50);
+    text("✌️ Aka (Rojo): Signo de Paz (Repulsión)", startX, startY + lh*2);
+    fill(200, 0, 255);
+    text("🤟 Púrpura: Tres dedos (Daño Masivo)", startX, startY + lh*3);
+    fill(255);
+    text("🤞 Dominio: Gesto cruzado (Ralentiza el tiempo)", startX, startY + lh*4);
+    fill(255, 100, 100);
+    text("✊✊ Invocar Mahoraga: Doble puño por 2s", startX, startY + lh*5);
+    
+    textAlign(CENTER, CENTER);
+    
+    // Requisito de Audio
+    if (!audioEnabled) {
+        fill(255, 100, 100);
+        textSize(20);
+        text("⚠️ HAZ CLICK EN LA PANTALLA UNA VEZ PARA ACTIVAR EL AUDIO ⚠️", width/2, startY + lh*6.5);
+    } else {
+        fill(100, 255, 100);
+        textSize(20);
+        text("✅ AUDIO ACTIVADO", width/2, startY + lh*6.5);
+    }
+
+    // Estado y Arranque
+    if (!handHandler.isLoaded) {
+        fill(255, 200, 0);
+        textSize(28);
+        text("CARGANDO MODELO IA...", width/2, height - 100);
+    } else if (!handHandler.isTracking) {
+        fill(255, 100, 100);
+        textSize(28);
+        text("BUSCANDO MANO EN LA CÁMARA...", width/2, height - 100);
+    } else {
+        fill(0, 255, 100);
+        textSize(32);
+        text("MANTÉN UN PUÑO (✊) CERRADO PARA EMPEZAR", width/2, height - 120);
+        
+        if (gesture === 'FIST') {
+            if (startTimer === 0) startTimer = millis();
+            let progress = map(millis() - startTimer, 0, 1000, 0, 400); // 1.0s para iniciar
+            progress = constrain(progress, 0, 400);
+            
+            rectMode(CORNER);
+            fill(255, 255, 255, 50);
+            rect(width/2 - 200, height - 80, 400, 15, 8);
+            fill(0, 255, 100);
+            rect(width/2 - 200, height - 80, progress, 15, 8);
+            
+            if (millis() - startTimer > 1000) {
+                gameState = 'PLAYING';
+                if (audioManager && audioEnabled) audioManager.playNormalBGM();
+                // Play a start sound effect if available
+                if (audioManager && audioEnabled) audioManager.playWarning();
+            }
+        } else {
+            startTimer = 0;
+        }
+    }
+    pop();
 }
 
 function drawDomain() {
@@ -165,11 +261,9 @@ function draw() {
 
   // --- START STATE ---
   if (gameState === 'START') {
-      background(20, 20, 25);
-      fill(255);
-      textSize(80);
-      textAlign(CENTER, CENTER);
-      text("CLICK TO START", width/2, height/2);
+      drawStartMenu(gesture);
+      handHandler.update(width, height, gesture);
+      handHandler.drawCursor(); // Draw cursor so they know they are being tracked
       return;
   }
 

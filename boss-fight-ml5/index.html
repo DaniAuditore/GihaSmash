@@ -12,9 +12,16 @@
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: #141414; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: monospace; }
         canvas { box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        #youtube-player { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
     </style>
 </head>
 <body>
+    <!-- Reproductor oculto para música de fondo vía YouTube -->
+    <div id="youtube-player"></div>
+    
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script src="scripts/visualEffects.js"></script>
     <script src="scripts/bot.js"></script>
     <script src="scripts/handHandler.js"></script>
@@ -23,6 +30,7 @@
     <script src="scripts/AttackManager.js"></script>
     <script src="scripts/AdaptationManager.js"></script>
     <script src="scripts/MahoragaBot.js"></script>
+    <script src="scripts/AudioManager.js"></script>
     <script src="scripts/sketch.js"></script>
 </body>
 </html>
