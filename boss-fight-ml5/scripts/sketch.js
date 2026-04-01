@@ -6,6 +6,7 @@ let fx;
 let platform;
 let uiManager;
 let attackManager;
+let audioManager;
 
 // Sistema de Domain Expansion (Vacío Infinito)
 let domainActive = false;
@@ -20,7 +21,7 @@ let invocationTimer = 0;
 
 // Variables Riesgo Real (Player HP)
 let playerHP = 100;
-let gameState = 'PLAYING'; // 'PLAYING', 'DEFEAT'
+let gameState = 'START'; // 'START', 'PLAYING', 'DEFEAT'
 let lastHitTime = 0; // Cooldown de invulnerabilidad jugador iFrames
 let gameScore = 0;
 let currentWave = 1;
@@ -83,10 +84,18 @@ function setup() {
   uiManager = new UIManager();
   attackManager = new AttackManager();
   adaptationManager = new AdaptationManager();
+  audioManager = new AudioManager();
 
   // Precargar estrellas para la Expansión de Dominio
   for (let i = 0; i < 150; i++) {
       stars.push({ x: random(-width, width), y: random(-height, height), z: random(width) });
+  }
+}
+
+function mousePressed() {
+  if (gameState === 'START') {
+    audioManager.init();
+    gameState = 'PLAYING';
   }
 }
 
@@ -154,6 +163,16 @@ function draw() {
       secondGesture = gestureAnalyzer.analyze(confidentHands[1], true);
   }
 
+  // --- START STATE ---
+  if (gameState === 'START') {
+      background(20, 20, 25);
+      fill(255);
+      textSize(80);
+      textAlign(CENTER, CENTER);
+      text("CLICK TO START", width/2, height/2);
+      return;
+  }
+
   // --- GAME OVER STATE ---
   if (gameState === 'DEFEAT') {
       background(50, 0, 0);
@@ -175,6 +194,7 @@ function draw() {
           currentWave = 1;
           bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 50, 1);
           fx.triggerScreenshake(20, 20); // Juice de inicio
+          if (audioManager) audioManager.playNormalBGM(); // <-- FIX: Reiniciar música al revivir
       }
       return; 
   }
@@ -199,7 +219,9 @@ function draw() {
           // Trigger Invocación: Megumi pose
           isMahoragaActive = true;
           fx.triggerScreenshake(50, 40); // Max Shake
-          bot = new MahoragaBot(width/2 - 40, 100, adaptationManager); // Reemplaza
+          bot = new MahoragaBot(width/2 - 40, 100, adaptationManager, 1 + (currentWave * 0.2)); // Reemplaza
+          
+          if (audioManager) audioManager.playMahoragaBGM();
       }
   } else if (confidentHands.length < 2 || gesture !== 'FIST') {
       invocationTimer = 0; // Cancelar si suelta
@@ -223,10 +245,10 @@ function draw() {
           didFire = true;
       }
       else if (gesture === 'BASIC_ATTACK') {
-          didFire = attackManager.tryAttack('BASIC', attackBox.x + attackBox.w/2, attackBox.y + attackBox.h/2, getCurrentBot(), fx);
+          didFire = attackManager.tryAttack('BASIC', attackBox.x + attackBox.w/2, attackBox.y + attackBox.h/2, getCurrentBot(), fx, uiManager, audioManager);
       }
       else if (gesture === 'BLUE' || gesture === 'RED' || gesture === 'PURPLE') {
-          didFire = attackManager.tryAttack(gesture, attackBox.x + attackBox.w/2, attackBox.y + attackBox.h/2, getCurrentBot(), fx, uiManager);
+          didFire = attackManager.tryAttack(gesture, attackBox.x + attackBox.w/2, attackBox.y + attackBox.h/2, getCurrentBot(), fx, uiManager, audioManager);
       }
 
       if (didFire) {
@@ -235,7 +257,7 @@ function draw() {
       }
   }
 
-  attackManager.update(uiManager);
+  attackManager.update(uiManager, audioManager);
   // Ralentización del bot por Expansión de Dominio
   let currentDomainMod = domainActive ? 0.1 : 1.0;
   getCurrentBot().update(fx, platform, currentDomainMod, attackBox);
@@ -296,8 +318,16 @@ function draw() {
           bot = new MahoragaBot(width/2 - 40, 100, adaptationManager, waveMultiplier);
           isMahoragaActive = true;
           fx.triggerScreenshake(50, 40); // Max Shake para Boss
+          
+          // Cambiar BGM
+          if (audioManager) audioManager.playMahoragaBGM();
       } else {
           bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 150, waveMultiplier);
+          
+          // Si matamos a Mahoraga en la ola anterior, regresamos la música a la normalidad
+          if (isMahoragaActive && audioManager) {
+              audioManager.playNormalBGM();
+          }
           isMahoragaActive = false;
           fx.triggerScreenshake(20, 10);
       }

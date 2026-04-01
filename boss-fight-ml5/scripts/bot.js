@@ -152,6 +152,7 @@ class Bot {
             if (distX < 150 && distY > 0 && distY < 300) {
                 if (this.lungeWaitFrame === 0) {
                     this.lungeWaitFrame = frameCount; // Iniciar "telegraph"
+                    if (typeof audioManager !== 'undefined') audioManager.playWarning();
                     this.vx = 0; // Detenerse
                     this.squash = 0.7; // Agacharse para saltar
                     this.stretch = 1.3;
@@ -268,6 +269,7 @@ class Bot {
     }
     
     // "Juice" trigger
+    if (typeof audioManager !== 'undefined') audioManager.playHit();
     fxManager.triggerHitstop(60); 
     fxManager.triggerScreenshake(attackType === 'PURPLE' ? 35 : 20, 15);
     fxManager.spawnParticles(this.x + this.w/2, this.y + this.h/2, attackType === 'PURPLE' ? 60 : 30, attackType);
