@@ -9,7 +9,7 @@ class AttackManager {
    */
   constructor() {
     this.skills = {
-      'BASIC': { lastTime: 0, cooldownDuration: 500, bufferTimer: 0 },
+      'BASIC': { lastTime: 0, cooldownDuration: 200, bufferTimer: 0, comboCount: 0 },
       'BLUE': { lastTime: 0, cooldownDuration: 2000, bufferTimer: 0 },
       'RED': { lastTime: 0, cooldownDuration: 5000, bufferTimer: 0 },
       'PURPLE': { lastTime: 0, cooldownDuration: 10000, bufferTimer: 0 } // Extra p/ futuro
@@ -34,6 +34,12 @@ class AttackManager {
     let skill = this.skills[type];
     let now = millis();
     let timeSinceLast = now - skill.lastTime;
+
+    // Reset combo si pasó mucho tiempo sin atacar
+    if (type === 'BASIC' && timeSinceLast > 1500) {
+        skill.comboCount = 0;
+        skill.cooldownDuration = 200; // Golpe rápido
+    }
 
     // 1. Está listo para disparar AHORA
     if (timeSinceLast >= skill.cooldownDuration) {
@@ -76,6 +82,15 @@ class AttackManager {
 
     // Lógica de daño según la técnica
     if (type === 'BASIC') {
+        this.skills[type].comboCount++;
+        // Si llegó al tercer golpe del combo
+        if (this.skills[type].comboCount >= 3) {
+             this.skills[type].cooldownDuration = 1000; // Penalización/Cooldown por combo completado
+             this.skills[type].comboCount = 0; // Reset para la próxima
+        } else {
+             this.skills[type].cooldownDuration = 200; // Golpes rápidos dentro del combo
+        }
+        
         bot.takeDamage(5, x, fx, 'BASIC');
         if (audioManager) audioManager.playHit();
     } else if (type === 'BLUE') {

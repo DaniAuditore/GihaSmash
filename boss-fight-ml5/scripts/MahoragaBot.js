@@ -50,7 +50,7 @@ class MahoragaBot extends Bot {
         }
 
         // --- DASH ATTACK (Cleave) ---
-        if (this.onGround && !this.isDashing && frameCount % 120 === 0 && random() > 0.6) {
+        if (this.onGround && !this.isDashing && frameCount % 60 === 0 && random() > 0.4) {
             this.isDashing = true;
             this.dashTimer = frameCount;
             this.vx = 0; // Congelarse para avisar
@@ -60,14 +60,21 @@ class MahoragaBot extends Bot {
 
         if (this.isDashing) {
             let framesElapsed = frameCount - this.dashTimer;
-            if (framesElapsed === 30) {
+            if (framesElapsed === 20) {
                 // Ejecutar Dash hacia la mano actual
-                this.vx = (targetX > this.x ? 1 : -1) * 35; // Dash brutal
-                this.vy = -2; // Ligeramente despegado del suelo para evitar fricción masiva
+                this.vx = (targetX > this.x ? 1 : -1) * 45; // Dash mucho más rápido y brutal
+                this.vy = -3; // Ligeramente despegado del suelo para evitar fricción masiva
                 fxManager.triggerScreenshake(20, 10);
-            } else if (framesElapsed > 50) {
+            } else if (framesElapsed > 40) {
                 // Fin del Dash
                 this.isDashing = false;
+            }
+        } else if (this.onGround && targetBox && frameCount % 30 === 0) {
+            // CONSTANT PURSUIT: Si no está haciendo dash, camina agresivamente hacia la mano
+            let speed = 8 + (this.waveMultiplier * 0.5 || 0);
+            this.vx = (targetX > this.x ? 1 : -1) * speed;
+            if (random() > 0.7) {
+                this.jump();
             }
         }
     }

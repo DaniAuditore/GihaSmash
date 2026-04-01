@@ -82,9 +82,9 @@ class Bot {
       }
     }
 
-    // Reseteo Failsafe: Si cae al vacío (Knockback victoria instantánea o reset)
+    // Reseteo Failsafe: Si cae al vacío (muerte instantánea)
     if (this.y > height + 100) {
-        this.respawn(platform);
+        this.hp = 0; // Muere al caer al vacío
     }
   }
 
