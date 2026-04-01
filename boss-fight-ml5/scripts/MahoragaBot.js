@@ -80,20 +80,45 @@ class MahoragaBot extends Bot {
     }
   }
 
-  // Override del dibujado para estética "Blanco Intenso"
+  // Override del dibujado para estética "Blanco Intenso" o Asset
   draw(platform) {
     push();
-    if (this.state === "HIT") {
-      fill(255, 0, 0); // Blink rojo al daño
+    // JUICE: Sombra dinámica de la Isla
+    if (this.onGround) {
+        fill(0, 0, 0, 100);
+        noStroke();
+        ellipse(this.x + this.w / 2, platform.y, this.w * 1.5, 15);
+    }
+
+    // Transladar al centro inferior para el escalado (squash/stretch)
+    translate(this.x + this.w / 2, this.y + this.h);
+    scale(this.stretch, this.squash);
+
+    if (typeof imgMahoraga !== 'undefined' && imgMahoraga) {
+        if (this.state === "HIT") {
+            tint(255, 0, 0); // Blink rojo al daño puro
+        } else {
+            noTint();
+        }
+        imageMode(CENTER);
+        // Dibujamos un poco sobredimensionado
+        image(imgMahoraga, 0, -this.h / 2, this.w * 1.6, this.h * 1.6);
+        noTint();
     } else {
-      fill(255); // Blanco puro, aura amenazante
-      stroke(200, 200, 255);
-      strokeWeight(4);
+        if (this.state === "HIT") {
+          fill(255, 0, 0); // Blink rojo al daño
+        } else {
+          fill(255); // Blanco puro, aura amenazante
+          stroke(200, 200, 255);
+          strokeWeight(4);
+        }
+        rect(-this.w / 2, -this.h, this.w, this.h, 10);
     }
     
-    rect(this.x, this.y, this.w, this.h, 10);
-    
-    // Draw de HP adaptativo (Mahoraga Wheel Base UI)
+    pop();
+
+    push();
+    // Draw de HP adaptativo (Mahoraga Wheel Base UI) - FUERA DE TRANSFORMACIÓN
     let hpPercent = this.hp / this.maxHp;
     fill(255, 50, 50);
     rect(this.x, this.y - 15, this.w, 8);

@@ -198,23 +198,38 @@ class Bot {
     // Aplicar deformación visual
     scale(this.stretch, this.squash);
     
-    let botColor;
-    if (this.state === 'HIT') {
-        botColor = color(255, 0, 0);
-    } else if (this.isLunging || this.lungeWaitFrame > 0) {
-        botColor = color(255, 100, 0); // Color de aviso/peligro
-    } else if (this.state === 'JUMPING') {
-        botColor = color(0, 150, 255);
+    // Si imgBot existe en variables globales (sketch.js preloads)
+    if (typeof imgBot !== 'undefined' && imgBot) {
+        if (this.state === 'HIT') {
+            tint(255, 100, 100); // Tinte rojizo al recibir daño
+        } else if (this.isLunging || this.lungeWaitFrame > 0) {
+            tint(255, 150, 150); // Tinte anaranjado/rojo en ataque
+        } else {
+            noTint();
+        }
+        imageMode(CENTER);
+        // Dibujamos con origen modificado y un poco más grande (overdraw)
+        image(imgBot, 0, -this.h / 2, this.w * 1.5, this.h * 1.5);
+        noTint();
     } else {
-        botColor = color(0, 200, 100);
+        // Fallback al cuadrado si la imagen falla
+        let botColor;
+        if (this.state === 'HIT') {
+            botColor = color(255, 0, 0);
+        } else if (this.isLunging || this.lungeWaitFrame > 0) {
+            botColor = color(255, 100, 0); // Color de aviso/peligro
+        } else if (this.state === 'JUMPING') {
+            botColor = color(0, 150, 255);
+        } else {
+            botColor = color(0, 200, 100);
+        }
+        
+        fill(botColor);
+        stroke(255);
+        strokeWeight(2);
+        rect(-this.w / 2, -this.h, this.w, this.h, 5);
     }
     
-    fill(botColor);
-    stroke(255);
-    strokeWeight(2);
-    
-    // Dibujar referenciando el nuevo centro (-w/2, -h)
-    rect(-this.w / 2, -this.h, this.w, this.h, 5);
     pop();
 
     // HP Bar (sin deformación)

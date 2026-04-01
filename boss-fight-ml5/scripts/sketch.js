@@ -8,6 +8,16 @@ let uiManager;
 let attackManager;
 let audioManager;
 
+let imgBot;
+let imgMahoraga;
+let imgPlatform;
+
+function preload() {
+  imgBot = loadImage('assets/bot.png');
+  imgMahoraga = loadImage('assets/bossMahoraga.png');
+  imgPlatform = loadImage('assets/platform.png');
+}
+
 // Sistema de Domain Expansion (Vacío Infinito)
 let domainActive = false;
 let domainEndTime = 0;
@@ -40,11 +50,18 @@ class Platform {
   
   draw() {
     push();
-    // Diseño "pesado": Bloque con grosor tridimensional
-    fill(40, 45, 60); // Cara frontal
-    rect(this.x, this.y, this.w, this.h + 40, 8);
-    fill(70, 75, 95); // Superficie
-    rect(this.x, this.y, this.w, this.h, 8);
+    if (imgPlatform) {
+      // Usar la imagen como textura de plataforma
+      imageMode(CORNER);
+      // Elevamos un poco y le damos margen extra para que no floten
+      image(imgPlatform, this.x - 20, this.y - 20, this.w + 40, this.h + 80);
+    } else {
+      // Diseño "pesado": Bloque con grosor tridimensional
+      fill(40, 45, 60); // Cara frontal
+      rect(this.x, this.y, this.w, this.h + 40, 8);
+      fill(70, 75, 95); // Superficie
+      rect(this.x, this.y, this.w, this.h, 8);
+    }
     pop();
   }
 }
