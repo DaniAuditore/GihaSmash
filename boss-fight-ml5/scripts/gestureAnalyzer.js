@@ -158,7 +158,7 @@ class GestureAnalyzer {
             this.lastInput = 'PURPLE';
             return 'PURPLE';
         }
-        return 'NONE'; // Intento fallido
+        return 'PURPLE_ATTEMPT'; // Intento fallido o reinicio
     }
     
     if (gesture === 'RED' || gesture === 'BLUE') {
