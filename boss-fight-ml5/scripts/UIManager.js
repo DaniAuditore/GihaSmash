@@ -5,9 +5,27 @@
 class UIManager {
   constructor() {
     this.icons = {
-      'BASIC': { x: width - 230, y: height - 100, color: color(255, 200, 0), readyPulse: 0, shakeFrames: 0 },
-      'BLUE': { x: width - 150, y: height - 100, color: color(0, 150, 255), readyPulse: 0, shakeFrames: 0 },
-      'RED': { x: width - 70, y: height - 100, color: color(255, 50, 50), readyPulse: 0, shakeFrames: 0 }
+      BASIC: {
+        x: width - 230,
+        y: height - 100,
+        color: color(255, 200, 0),
+        readyPulse: 0,
+        shakeFrames: 0,
+      },
+      BLUE: {
+        x: width - 150,
+        y: height - 100,
+        color: color(0, 150, 255),
+        readyPulse: 0,
+        shakeFrames: 0,
+      },
+      RED: {
+        x: width - 70,
+        y: height - 100,
+        color: color(255, 50, 50),
+        readyPulse: 0,
+        shakeFrames: 0,
+      },
     };
   }
 
@@ -36,27 +54,27 @@ class UIManager {
    */
   draw(attackManager) {
     push();
-    
+
     for (let type of ['BASIC', 'BLUE', 'RED']) {
       let icon = this.icons[type];
       let skill = attackManager.skills[type];
-      
+
       let cdTotal = skill.cooldownDuration;
       let cdRemaining = Math.max(0, cdTotal - (millis() - skill.lastTime));
-      
+
       // Chequear transición de Enfriamiento -> Listo para disparar el evento visual
       if (cdRemaining === 0 && icon.wasOnCooldown) {
-          this.triggerReady(type);
+        this.triggerReady(type);
       }
       icon.wasOnCooldown = cdRemaining > 0;
 
-      // Calcular posiciones con posible Shake 
+      // Calcular posiciones con posible Shake
       let dx = icon.x;
       let dy = icon.y;
       if (icon.shakeFrames > 0) {
-          dx += random(-4, 4);
-          dy += random(-4, 4);
-          icon.shakeFrames--;
+        dx += random(-4, 4);
+        dy += random(-4, 4);
+        icon.shakeFrames--;
       }
 
       // Fondo oscuro
@@ -72,7 +90,7 @@ class UIManager {
         fill(50, 0, 0, 150); // Oscurecido
         noStroke();
         arc(dx, dy, 60, 60, -HALF_PI, -HALF_PI + angle, PIE);
-        
+
         // Texto de segundos restantes
         fill(255);
         textAlign(CENTER, CENTER);
@@ -94,14 +112,14 @@ class UIManager {
         circle(dx, dy, pulseSize);
         icon.readyPulse -= 10;
       }
-      
+
       // Letra central
       fill(255);
       noStroke();
       textAlign(CENTER, CENTER);
       textSize(18);
       textStyle(BOLD);
-      let label = type === 'BLUE' ? 'Ao' : (type === 'RED' ? 'Aka' : 'Hit');
+      let label = type === 'BLUE' ? 'Ao' : type === 'RED' ? 'Aka' : 'Hit';
       text(label, dx, dy - 45);
     }
     pop();

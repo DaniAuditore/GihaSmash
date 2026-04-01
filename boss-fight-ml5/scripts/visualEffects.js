@@ -6,7 +6,7 @@ class Particle {
   constructor(x, y, type = 'NORMAL') {
     this.x = x;
     this.y = y;
-    
+
     if (type === 'BLUE') {
       this.vx = random(-5, 5);
       this.vy = random(-5, 5);
@@ -62,7 +62,7 @@ class FXManager {
   }
 
   /**
-   * Invoca el hitstop (congelación global). 
+   * Invoca el hitstop (congelación global).
    * Impide la interpolación natural del juego en el loop siguiente.
    * @param {number} durationMs - Milisegundos que el Game Loop principal debería ser suspendido (Normal: 60ms).
    */
@@ -72,7 +72,7 @@ class FXManager {
 
   spawnParticles(x, y, count = 20, type = 'NORMAL') {
     for (let i = 0; i < count; i++) {
-        this.particles.push(new Particle(x, y, type));
+      this.particles.push(new Particle(x, y, type));
     }
   }
 

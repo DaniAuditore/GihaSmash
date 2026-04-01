@@ -1,12 +1,12 @@
 /**
- * Motor de heurísticas matemáticas para inferir gestos físicos evaluando 
+ * Motor de heurísticas matemáticas para inferir gestos físicos evaluando
  * distancias euclidianas 2D entre los nodos clave (keypoints) de la mano.
- * 
+ *
  * @class GestureAnalyzer
  */
 class GestureAnalyzer {
   /**
-   * Inicializa el analizador estableciendo los umbrales de confianza y el 
+   * Inicializa el analizador estableciendo los umbrales de confianza y el
    * buffer temporal de estabilización (evita falsos positivos por parpadeo de ML5).
    */
   constructor() {
@@ -25,7 +25,7 @@ class GestureAnalyzer {
   /**
    * Clasifica un array de keypoints de ML5 en un gesto discreto ('FIST', 'PEACE', etc.).
    * Requiere confirmación sostenida de frames consecutivos antes de despachar el estado.
-   * 
+   *
    * @param {Object} hand - Objeto de predicción de ML5 Handpose (debe contener el array `keypoints`).
    * @param {boolean} [isSecondary=false] - Indica si evalúa la segunda mano detectada (para combos).
    * @returns {string} El identificador constante del gesto detectado (ej. 'BLUE', 'RED', 'NONE').
@@ -74,10 +74,11 @@ class GestureAnalyzer {
     let dIndexMiddle = dist(indexTip.x, indexTip.y, middleTip.x, middleTip.y);
     let dMiddleRing = dist(middleTip.x, middleTip.y, ringTip.x, ringTip.y);
     let topToBottomDist = dist(indexTip.x, indexTip.y, pinkyTip.x, pinkyTip.y);
-    let isBasicAttack = isOpenPalm && dIndexMiddle < 40 && dMiddleRing < 40 && topToBottomDist < 100;
+    let isBasicAttack =
+      isOpenPalm && dIndexMiddle < 40 && dMiddleRing < 40 && topToBottomDist < 100;
 
     let rawDetection = 'NONE';
-    
+
     // Switch de Prioridad: El Puño tiene máxima prioridad para evitar spam al mover la mano
     if (isFist) rawDetection = 'FIST';
     else if (isCrossed) rawDetection = 'DOMAIN';
@@ -90,34 +91,34 @@ class GestureAnalyzer {
     // TEMPORAL FILTERING (Evitar ráfagas por glitch de ML5)
     // ----------------------------------------------------
     if (rawDetection === this.candidateGesture) {
-        this.candidateFrames++;
+      this.candidateFrames++;
     } else {
-        this.candidateGesture = rawDetection;
-        this.candidateFrames = 1;
+      this.candidateGesture = rawDetection;
+      this.candidateFrames = 1;
     }
 
     // El PUÑO (Fist) responde rápido para no perder fluidez en el tracking del arma/movimiento
     if (this.candidateGesture === 'FIST') {
-        this.currentGesture = 'FIST';
-        return 'FIST';
+      this.currentGesture = 'FIST';
+      return 'FIST';
     }
 
     // Los rituales necesitan confirmación temporal (ej: 6 frames)
     if (this.candidateFrames >= this.requiredFrames && this.candidateGesture !== 'NONE') {
-        if (millis() > this.cooldown) {
-            let evaluated = this.evaluate(this.candidateGesture);
-            this.currentGesture = evaluated;
-            
-            if (evaluated !== 'NONE') {
-                this.updateBuffer(evaluated);
-                this.cooldown = millis() + 500; // Cooldown post-ataque
-            }
-        } else {
-            this.currentGesture = 'COOLDOWN'; // Silenciamos durante el cooldown
+      if (millis() > this.cooldown) {
+        let evaluated = this.evaluate(this.candidateGesture);
+        this.currentGesture = evaluated;
+
+        if (evaluated !== 'NONE') {
+          this.updateBuffer(evaluated);
+          this.cooldown = millis() + 500; // Cooldown post-ataque
         }
+      } else {
+        this.currentGesture = 'COOLDOWN'; // Silenciamos durante el cooldown
+      }
     } else {
-        // Mientras carga el buffer o navega con la mano abierta sin decisión firme
-        this.currentGesture = 'NONE'; 
+      // Mientras carga el buffer o navega con la mano abierta sin decisión firme
+      this.currentGesture = 'NONE';
     }
 
     return this.currentGesture;
@@ -125,79 +126,79 @@ class GestureAnalyzer {
 
   updateBuffer(gesture) {
     let now = millis();
-    
+
     // Filtrar inputs más viejos de 3 segundos
-    this.buffer = this.buffer.filter(b => now - b.time < 3000);
+    this.buffer = this.buffer.filter((b) => now - b.time < 3000);
 
     // Solo guardar Rojo y Azul
     if (gesture === 'BLUE' || gesture === 'RED') {
-        // Debounce para buffer: No lo agregues si es idéntico al último y pasó hace menos de 800ms
-        let lastInBuf = this.buffer.length > 0 ? this.buffer[this.buffer.length - 1] : null;
-        if (!lastInBuf || lastInBuf.type !== gesture || (now - lastInBuf.time) > 800) {
-            this.buffer.push({ type: gesture, time: now });
-        }
+      // Debounce para buffer: No lo agregues si es idéntico al último y pasó hace menos de 800ms
+      let lastInBuf = this.buffer.length > 0 ? this.buffer[this.buffer.length - 1] : null;
+      if (!lastInBuf || lastInBuf.type !== gesture || now - lastInBuf.time > 800) {
+        this.buffer.push({ type: gesture, time: now });
+      }
     }
 
     // Verificar si el combo está listo (Azul + Rojo en el buffer)
-    let hasBlue = this.buffer.some(b => b.type === 'BLUE');
-    let hasRed = this.buffer.some(b => b.type === 'RED');
+    let hasBlue = this.buffer.some((b) => b.type === 'BLUE');
+    let hasRed = this.buffer.some((b) => b.type === 'RED');
     this.comboReady = hasBlue && hasRed;
   }
 
   evaluate(gesture) {
     if (gesture === 'DOMAIN') {
-        this.lastInput = 'DOMAIN';
-        return 'DOMAIN';
+      this.lastInput = 'DOMAIN';
+      return 'DOMAIN';
     }
 
     if (gesture === 'BASIC_ATTACK') {
-        this.lastInput = 'BASIC_ATTACK';
-        return 'BASIC_ATTACK';
+      this.lastInput = 'BASIC_ATTACK';
+      return 'BASIC_ATTACK';
     }
 
     if (gesture === 'PURPLE_ATTEMPT') {
-        if (this.comboReady) {
-            this.buffer = []; // Vaciar memoria al ejecutar Púrpura
-            this.lastInput = 'PURPLE';
-            return 'PURPLE';
-        }
-        return 'PURPLE_ATTEMPT'; // Intento fallido o reinicio
+      if (this.comboReady) {
+        this.buffer = []; // Vaciar memoria al ejecutar Púrpura
+        this.lastInput = 'PURPLE';
+        return 'PURPLE';
+      }
+      return 'PURPLE_ATTEMPT'; // Intento fallido o reinicio
     }
-    
+
     if (gesture === 'RED' || gesture === 'BLUE') {
-        this.lastInput = gesture;
-        return gesture;
+      this.lastInput = gesture;
+      return gesture;
     }
-    
+
     return 'NONE';
   }
 
   drawDebug(x, y) {
-      push();
-      fill(10, 15, 30, 220); // Fondo de consola
-      stroke(0, 255, 255);
-      strokeWeight(2);
-      rect(x, y, 320, 100, 5);
-      
-      fill(255);
-      noStroke();
-      textSize(16);
-      textFont('monospace');
-      textAlign(LEFT, TOP);
-      
-      text(`[RITUAL CONSOLE]`, x + 10, y + 10);
-      
-      fill(0, 255, 255);
-      text(`LAST INPUT:  ${this.lastInput}`, x + 10, y + 35);
-      
-      let buffStr = this.buffer.map(b => b.type).join(' + ');
-      if (buffStr === '') buffStr = 'EMPTY';
-      fill(255, 200, 0);
-      text(`BUFFER:      [${buffStr}]`, x + 10, y + 55);
-      
-      let cColor = this.comboReady ? color(180, 0, 255) : color(100);
-      fill(cColor);
-      text(`COMBO READY: ${this.comboReady}`, x + 10, y + 75);
-      pop();
+    push();
+    fill(10, 15, 30, 220); // Fondo de consola
+    stroke(0, 255, 255);
+    strokeWeight(2);
+    rect(x, y, 320, 100, 5);
+
+    fill(255);
+    noStroke();
+    textSize(16);
+    textFont('monospace');
+    textAlign(LEFT, TOP);
+
+    text(`[RITUAL CONSOLE]`, x + 10, y + 10);
+
+    fill(0, 255, 255);
+    text(`LAST INPUT:  ${this.lastInput}`, x + 10, y + 35);
+
+    let buffStr = this.buffer.map((b) => b.type).join(' + ');
+    if (buffStr === '') buffStr = 'EMPTY';
+    fill(255, 200, 0);
+    text(`BUFFER:      [${buffStr}]`, x + 10, y + 55);
+
+    let cColor = this.comboReady ? color(180, 0, 255) : color(100);
+    fill(cColor);
+    text(`COMBO READY: ${this.comboReady}`, x + 10, y + 75);
+    pop();
   }
 }
