@@ -13,17 +13,21 @@ GihaSmash es un juego de acción 2D "Jefe vs Jugador" que se juega directamente 
 Puedes iniciar el proyecto copiando y pegando estos comandos en tu terminal.
 
 **Opción A: Docker (Recomendado)**
+
 ```bash
 docker build -t gihasmash .
 docker run -d -p 3000:3000 gihasmash
 ```
+
 Abre `http://localhost:3000` en tu navegador.
 
 **Opción B: Servidor Estático Local (Node)**
+
 ```bash
 npm install -g serve
 npx serve boss-fight-ml5 -l 3000
 ```
+
 Abre `http://localhost:3000` en tu navegador.
 
 ## Ejemplo de Uso Rápido (Controles)
@@ -58,5 +62,5 @@ boss-fight-ml5/scripts/
 
 - **Frontend-only**: Toda la lógica, la memoria de variables y el estado residen estrictamente en el cliente. No hay validación de servidor.
 - **Latencia de ML5**: La inferencia neuronal introduce una latencia ineludible (usualmente 15-30ms) que depende directamente del procesamiento de la GPU del usuario.
-- **Limitación de FPS**: Bloqueado a 60 FPS. El engine P5.js es *single-threaded*, los cálculos de físicas, renderizado y UI compiten por el mismo hilo en `sketch.js`.
-- **Cero Frameworks**: El proyecto está construido para no requerir *bundlers* (Webpack, Vite). La carga de scripts (`<script>`) ocurre secuencialmente de forma directa desde el HTML.
+- **Limitación de FPS**: Bloqueado a 60 FPS. El engine P5.js es _single-threaded_, los cálculos de físicas, renderizado y UI compiten por el mismo hilo en `sketch.js`.
+- **Cero Frameworks**: El proyecto está construido para no requerir _bundlers_ (Webpack, Vite). La carga de scripts (`<script>`) ocurre secuencialmente de forma directa desde el HTML.
