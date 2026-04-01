@@ -18,13 +18,13 @@ class MahoragaBot extends Bot {
     super(x, y, waveMultiplier);
     this.adaptationManager = adaptationManager;
 
-    // Propiedades sobredimensionadas
-    this.w = 80;
-    this.h = 260;
-    this.renderW = 160;
-    this.renderH = 282;
+    // Propiedades sobredimensionadas pero ajustadas a la mitad (manteniendo aspect ratio 370x653)
+    this.w = 40;
+    this.h = 130;
+    this.renderW = 80;
+    this.renderH = 142;
     this.offsetX = 0;
-    this.offsetY = -141;
+    this.offsetY = -71;
     this.maxHp = 1000 * waveMultiplier;
     this.hp = this.maxHp;
     this.speedX = 3.5 + waveMultiplier * 0.2; // Un poco más veloz
