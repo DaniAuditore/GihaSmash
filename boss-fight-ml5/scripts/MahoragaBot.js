@@ -18,13 +18,14 @@ class MahoragaBot extends Bot {
     super(x, y, waveMultiplier);
     this.adaptationManager = adaptationManager;
 
-    // Propiedades sobredimensionadas pero ajustadas a la mitad (manteniendo aspect ratio 370x653)
-    this.w = 40;
-    this.h = 130;
-    this.renderW = 80;
-    this.renderH = 142;
+    // Mahoraga es exactamente el doble de ancho que un bot normal (51 * 2 = 102)
+    // Manteniendo el Aspect Ratio real de Mahoraga (370x653 = 0.566): Alto = 102 / 0.566 = 180
+    this.w = 51;
+    this.h = 165;
+    this.renderW = 102;
+    this.renderH = 180;
     this.offsetX = 0;
-    this.offsetY = -71;
+    this.offsetY = -90;
     this.maxHp = 1000 * waveMultiplier;
     this.hp = this.maxHp;
     this.speedX = 3.5 + waveMultiplier * 0.2; // Un poco más veloz

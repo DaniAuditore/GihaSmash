@@ -13,12 +13,13 @@ class Bot {
   constructor(x, y, waveMultiplier = 1) {
     this.x = x;
     this.y = y;
-    this.w = 34;
-    this.h = 50;
-    this.renderW = 50;
-    this.renderH = 50;
+    // La mitad de Mahoraga (142 / 2 = 71) manteniendo aspect ratio original de 252x349
+    this.w = 35;
+    this.h = 65;
+    this.renderW = 51;
+    this.renderH = 71;
     this.offsetX = 0;
-    this.offsetY = -25;
+    this.offsetY = -35.5;
     this.maxHp = 100 * waveMultiplier;
     this.hp = this.maxHp;
 
