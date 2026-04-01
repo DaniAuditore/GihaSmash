@@ -149,17 +149,17 @@ function drawStartMenu(gesture) {
     let lh = 45;
     
     fill(255);
-    text("🤚 Básico (Combo): Palma abierta sobre el enemigo", startX, startY);
+    text("Básico (Combo): Palma abierta sobre el enemigo", startX, startY);
     fill(0, 150, 255);
-    text("☝️ Ao (Azul): Dedo índice (Atracción)", startX, startY + lh);
+    text("Ao (Azul): Dedo índice y pulgar en pinza (Atracción)", startX, startY + lh);
     fill(255, 50, 50);
-    text("✌️ Aka (Rojo): Signo de Paz (Repulsión)", startX, startY + lh*2);
+    text("Aka (Rojo): Palma abierta (Repulsión)", startX, startY + lh*2);
     fill(200, 0, 255);
-    text("🤟 Púrpura: Tres dedos (Daño Masivo)", startX, startY + lh*3);
+    text("Púrpura: Signo de la paz (Daño Masivo), se activa tras usar Ao y Aka", startX, startY + lh*3);
     fill(255);
-    text("🤞 Dominio: Gesto cruzado (Ralentiza el tiempo)", startX, startY + lh*4);
+    text("Dominio: Gesto cruzado (Ralentiza el tiempo)", startX, startY + lh*4);
     fill(255, 100, 100);
-    text("✊✊ Invocar Mahoraga: Doble puño por 2s", startX, startY + lh*5);
+    text("Invocar Mahoraga: Doble puño por 2s", startX, startY + lh*5);
     
     textAlign(CENTER, CENTER);
     
