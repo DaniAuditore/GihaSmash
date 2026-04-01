@@ -19,8 +19,12 @@ class MahoragaBot extends Bot {
     this.adaptationManager = adaptationManager;
 
     // Propiedades sobredimensionadas
-    this.w = 80;
+    this.w = 40;
     this.h = 80;
+    this.renderW = 80;
+    this.renderH = 80;
+    this.offsetX = 0;
+    this.offsetY = -40;
     this.maxHp = 1000 * waveMultiplier;
     this.hp = this.maxHp;
     this.speedX = 3.5 + waveMultiplier * 0.2; // Un poco más veloz
@@ -121,7 +125,7 @@ class MahoragaBot extends Bot {
       }
       imageMode(CENTER);
       // Dibujamos un poco sobredimensionado
-      image(imgMahoraga, 0, -this.h / 2, this.w * 1.6, this.h * 1.6);
+      image(imgMahoraga, this.offsetX, this.offsetY, this.renderW, this.renderH);
       noTint();
     } else {
       if (this.state === 'HIT') {
@@ -144,6 +148,15 @@ class MahoragaBot extends Bot {
     fill(50, 255, 50);
     rect(this.x, this.y - 15, this.w * hpPercent, 8);
     pop();
+
+    if (window.DEBUG_HITBOX) {
+      push();
+      noFill();
+      stroke(0, 255, 0);
+      strokeWeight(2);
+      rect(this.x, this.y, this.w, this.h);
+      pop();
+    }
   }
 
   /**

@@ -86,11 +86,21 @@ class HandHandler {
     noStroke();
     text('LOCKED', this.currentPos.x + 15, this.currentPos.y - 15);
     pop();
+
+    if (window.DEBUG_HITBOX) {
+      let bounds = this.getAttackBounds();
+      push();
+      noFill();
+      stroke(0, 255, 0);
+      strokeWeight(2);
+      rect(bounds.x, bounds.y, bounds.w, bounds.h);
+      pop();
+    }
   }
 
   getAttackBounds() {
     // Retorna el hitbox del ataque AABB (alineado al centro del cursor)
-    let size = 50;
+    let size = 40;
     return {
       x: this.currentPos.x - size / 2,
       y: this.currentPos.y - size / 2,

@@ -30,6 +30,7 @@ let isMahoragaActive = false;
 let invocationTimer = 0;
 
 // Variables Riesgo Real (Player HP)
+window.DEBUG_HITBOX = false;
 let playerHP = 100;
 let gameState = 'START'; // 'START', 'PLAYING', 'DEFEAT'
 let lastHitTime = 0; // Cooldown de invulnerabilidad jugador iFrames
@@ -48,23 +49,31 @@ class Platform {
     this.h = h;
   }
 
-  draw() {
-    push();
-    if (imgPlatform) {
-      // Usar la imagen como textura de plataforma
-      imageMode(CORNER);
-      // Elevamos un poco y le damos margen extra para que no floten
-      image(imgPlatform, this.x - 20, this.y - 20, this.w + 40, this.h + 80);
-    } else {
-      // Diseño "pesado": Bloque con grosor tridimensional
-      fill(40, 45, 60); // Cara frontal
-      rect(this.x, this.y, this.w, this.h + 40, 8);
-      fill(70, 75, 95); // Superficie
-      rect(this.x, this.y, this.w, this.h, 8);
+    draw() {
+      push();
+      if (imgPlatform) {
+        // Usar la imagen como textura de plataforma
+        imageMode(CORNER);
+        // Ajustamos la imagen para que el borde visual coincida exactamente con this.y (quitamos offset)
+        image(imgPlatform, this.x - 20, this.y, this.w + 40, this.h + 80);
+      } else {
+        // Diseño "pesado": Bloque con grosor tridimensional
+        fill(40, 45, 60); // Cara frontal
+        rect(this.x, this.y, this.w, this.h + 40, 8);
+        fill(70, 75, 95); // Superficie
+        rect(this.x, this.y, this.w, this.h, 8);
+      }
+      
+      // DEBUG: Dibujar la caja real de la plataforma
+      if (window.DEBUG_HITBOX) {
+        noFill();
+        stroke(0, 255, 255); // Color cyan para diferenciar del verde de los bots
+        strokeWeight(2);
+        rect(this.x, this.y, this.w, this.h);
+      }
+      pop();
     }
-    pop();
   }
-}
 
 /**
  * Motor Central P5 instanciado a 60fps.
@@ -76,8 +85,10 @@ function setup() {
   pixelDensity(1); // 🔧 EL TRUCO DEL ARQUITECTO: Forzar densidad de píxeles para pantallas Retina/4K
   frameRate(60); // 🔧 Forzar al engine a no rendirse ante los Hz de la cámara
 
-  // Floating Island
-  platform = new Platform(width / 2 - 300, height - 150, 600, 30);
+  // Floating Island: ocupa 2/3 del canvas y se mantiene centrada
+  const platformWidth = (width * 2) / 3;
+  const platformX = (width - platformWidth) / 2;
+  platform = new Platform(platformX, height - 150, platformWidth, 30);
 
   // 🔧 Reducir la resolución de captura REAL del hardware de la cámara
   let constraints = {

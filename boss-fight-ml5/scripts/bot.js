@@ -13,8 +13,12 @@ class Bot {
   constructor(x, y, waveMultiplier = 1) {
     this.x = x;
     this.y = y;
-    this.w = 50;
+    this.w = 34;
     this.h = 50;
+    this.renderW = 50;
+    this.renderH = 50;
+    this.offsetX = 0;
+    this.offsetY = -25;
     this.maxHp = 100 * waveMultiplier;
     this.hp = this.maxHp;
 
@@ -214,7 +218,7 @@ class Bot {
       }
       imageMode(CENTER);
       // Dibujamos con origen modificado y un poco más grande (overdraw)
-      image(imgBot, 0, -this.h / 2, this.w * 1.5, this.h * 1.5);
+      image(imgBot, this.offsetX, this.offsetY, this.renderW, this.renderH);
       noTint();
     } else {
       // Fallback al cuadrado si la imagen falla
@@ -245,6 +249,15 @@ class Bot {
     fill(0, 255, 0);
     rect(this.x, this.y - 15, map(this.hp, 0, this.maxHp, 0, this.w), 5);
     pop();
+
+    if (window.DEBUG_HITBOX) {
+      push();
+      noFill();
+      stroke(0, 255, 0);
+      strokeWeight(2);
+      rect(this.x, this.y, this.w, this.h);
+      pop();
+    }
   }
 
   /**
