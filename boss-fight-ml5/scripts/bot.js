@@ -8,19 +8,21 @@ class Bot {
    * Instancia al Bot enemigo.
    * @param {number} x - Posición inicial en X.
    * @param {number} y - Posición inicial en Y.
+   * @param {number} waveMultiplier - Multiplicador de dificultad.
    */
-  constructor(x, y) {
+  constructor(x, y, waveMultiplier = 1) {
     this.x = x;
     this.y = y;
     this.w = 50;
     this.h = 50;
-    this.hp = 100;
+    this.maxHp = 100 * waveMultiplier;
+    this.hp = this.maxHp;
     
-    // Cinemática
+    // Cinemática escalada por dificultad
     this.vx = 0;
     this.vy = 0;
-    this.gravity = 0.8;
-    this.jumpForce = -15;
+    this.gravity = 0.8 + (waveMultiplier * 0.05); // Cae ligeramente más rápido en olas altas
+    this.jumpForce = -15 - (waveMultiplier * 0.5); // Salta más alto
     this.friction = 0.9;
     this.onGround = false;
     
@@ -220,7 +222,7 @@ class Bot {
     noStroke();
     rect(this.x, this.y - 15, this.w, 5);
     fill(0, 255, 0);
-    rect(this.x, this.y - 15, map(this.hp, 0, 100, 0, this.w), 5);
+    rect(this.x, this.y - 15, map(this.hp, 0, this.maxHp, 0, this.w), 5);
     pop();
   }
 
@@ -236,6 +238,10 @@ class Bot {
     if (this.hp <= 0 || this.state === 'HIT') return;
     
     this.hp -= amount;
+    
+    // Sumar puntos por infligir daño (solo si gameScore está inicializado)
+    if (typeof gameScore !== 'undefined') gameScore += Math.floor(amount * 10);
+    
     this.state = 'HIT';
     this.hitFrame = frameCount; // Registrar foto del tiempo actual
     

@@ -3,16 +3,16 @@
  * el daño y físicas con lógica de reducción adaptativa.
  */
 class MahoragaBot extends Bot {
-  constructor(x, y, adaptationManager) {
-    super(x, y);
+  constructor(x, y, adaptationManager, waveMultiplier = 1) {
+    super(x, y, waveMultiplier);
     this.adaptationManager = adaptationManager;
     
     // Propiedades sobredimensionadas
     this.w = 80;
     this.h = 80;
-    this.maxHp = 1000;
+    this.maxHp = 1000 * waveMultiplier;
     this.hp = this.maxHp;
-    this.speedX = 3.5; // Un poco más veloz por defecto
+    this.speedX = 3.5 + (waveMultiplier * 0.2); // Un poco más veloz
     
     // IA Avanzada
     this.hasDoubleJumped = false;

@@ -22,6 +22,8 @@ let invocationTimer = 0;
 let playerHP = 100;
 let gameState = 'PLAYING'; // 'PLAYING', 'DEFEAT'
 let lastHitTime = 0; // Cooldown de invulnerabilidad jugador iFrames
+let gameScore = 0;
+let currentWave = 1;
 
 /**
  * Estructura estática principal que representa el suelo donde se asienta la física del Bot.
@@ -169,7 +171,9 @@ function draw() {
           gameState = 'PLAYING';
           isMahoragaActive = false;
           domainActive = false;
-          bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 50);
+          gameScore = 0;
+          currentWave = 1;
+          bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 50, 1);
           fx.triggerScreenshake(20, 20); // Juice de inicio
       }
       return; 
@@ -279,10 +283,27 @@ function draw() {
   }
 
   if (getCurrentBot().hp <= 0) {
-      textSize(60);
-      fill(0, 255, 0);
-      textAlign(CENTER);
-      text("BOT DESTRUIDO", width/2, height/2);
+      // Bono de puntuación por baja
+      gameScore += isMahoragaActive ? 5000 : 500;
+      currentWave++;
+      
+      let waveMultiplier = 1 + (currentWave * 0.2);
+      
+      // Spawn de la siguiente Ola
+      fx.spawnParticles(getCurrentBot().x + getCurrentBot().w/2, getCurrentBot().y + getCurrentBot().h/2, 100, 'PURPLE');
+      
+      if (currentWave % 5 === 0) {
+          bot = new MahoragaBot(width/2 - 40, 100, adaptationManager, waveMultiplier);
+          isMahoragaActive = true;
+          fx.triggerScreenshake(50, 40); // Max Shake para Boss
+      } else {
+          bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 150, waveMultiplier);
+          isMahoragaActive = false;
+          fx.triggerScreenshake(20, 10);
+      }
+      
+      // Limpiar ataques pendientes para no instakillear al nuevo bot
+      attackManager = new AttackManager();
   }
   pop();
   
@@ -299,7 +320,14 @@ function drawRiesgoReal() {
   // Player HP
   fill(255);
   textSize(20);
+  textAlign(LEFT, TOP);
   text(`HP JUGADOR: ${playerHP}`, 20, 30);
+  
+  // Score y Ola
+  fill(255, 215, 0); // Color oro
+  textSize(24);
+  textAlign(CENTER, TOP);
+  text(`OLA: ${currentWave}  |  PUNTOS: ${gameScore}`, width/2, 30);
 
   // Barra de progreso invisible si el usuario sostiene la pose
   if (invocationTimer > 0 && !isMahoragaActive) {
