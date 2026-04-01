@@ -400,21 +400,27 @@ function draw() {
 
   // UI (No afectada por el shake)
   push();
-  fill(255);
-  textSize(20);
-  text(`FPS: ${floor(frameRate())}`, width - 150, 30);
+  
+  // UI Info / Debug (Bottom Left)
+  translate(20, height - 60);
+  fill(255, 255, 255, 150); // Texto semi-transparente
+  textSize(14);
+  textAlign(LEFT, BOTTOM);
+  text(`FPS: ${floor(frameRate())}`, 0, 0);
   
   if (!handHandler.isLoaded) {
-      fill(255, 200, 0);
-      text("Cargando modelo ML5 Handpose...", width - 350, 60);
+      fill(255, 200, 0, 200);
+      text("⏳ Cargando modelo ML5...", 0, 20);
   } else if (!handHandler.isTracking) {
-      fill(255, 100, 100);
-      text("Cámara: Buscando mano", width - 250, 60);
+      fill(255, 100, 100, 200);
+      text("❌ Buscando mano...", 0, 20);
   } else {
-      fill(0, 255, 100);
-      text("Objetivo detectado.", width - 200, 60);
+      fill(0, 255, 100, 200);
+      text("✅ Objetivo detectado", 0, 20);
   }
+  pop();
 
+  push();
   if (getCurrentBot().hp <= 0) {
       // Bono de puntuación por baja
       gameScore += isMahoragaActive ? 5000 : 500;
@@ -448,8 +454,8 @@ function draw() {
   }
   pop();
   
-  // HUD Diagnóstico (Consola del Arquitecto)
-  gestureAnalyzer.drawDebug(10, 10);
+  // HUD Diagnóstico (Consola del Arquitecto - Historial de Gestos)
+  gestureAnalyzer.drawDebug(20, 60);
   uiManager.draw(attackManager);
   
   // HUD Player HP (Riesgo Real) y Timer de Invocación
@@ -458,25 +464,77 @@ function draw() {
 
 function drawRiesgoReal() {
   push();
-  // Player HP
+  // Panel superior izquierdo: HP del Jugador
+  translate(20, 20);
+  
+  // Fondo de la barra de vida
+  fill(0, 0, 0, 150);
+  stroke(100);
+  strokeWeight(2);
+  rect(0, 0, 300, 30, 15);
+  
+  // Barra de vida (relleno)
+  let hpWidth = map(max(0, playerHP), 0, 100, 0, 296);
+  let hpColor = lerpColor(color(255, 50, 50), color(50, 255, 50), max(0, playerHP) / 100);
+  noStroke();
+  fill(hpColor);
+  rect(2, 2, hpWidth, 26, 13);
+  
+  // Texto HP
+  fill(255);
+  textSize(18);
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  text(`❤️ HP: ${max(0, playerHP)}/100`, 150, 15);
+  pop();
+
+  push();
+  // Panel superior derecho: Olas y Puntuación
+  translate(width - 320, 20);
+  fill(0, 0, 0, 150);
+  stroke(100);
+  strokeWeight(2);
+  rect(0, 0, 300, 40, 20);
+
+  noStroke();
   fill(255);
   textSize(20);
-  textAlign(LEFT, TOP);
-  text(`HP JUGADOR: ${playerHP}`, 20, 30);
+  textAlign(LEFT, CENTER);
+  textStyle(BOLD);
+  text(`🌊 OLA: ${currentWave}`, 20, 20);
   
-  // Score y Ola
-  fill(255, 215, 0); // Color oro
-  textSize(24);
-  textAlign(CENTER, TOP);
-  text(`OLA: ${currentWave}  |  PUNTOS: ${gameScore}`, width/2, 30);
-
-  // Barra de progreso invisible si el usuario sostiene la pose
-  if (invocationTimer > 0 && !isMahoragaActive) {
-      let progress = map(millis() - invocationTimer, 0, 2000, 0, width);
-      fill(255, 255, 255, 100);
-      rect(0, 0, progress, 10);
-  }
+  fill(255, 215, 0); // Oro
+  textAlign(RIGHT, CENTER);
+  text(`🏆 PUNTOS: ${gameScore}`, 280, 20);
   pop();
+
+  // Barra de invocación (Centro)
+  if (invocationTimer > 0 && !isMahoragaActive) {
+      push();
+      let progress = map(millis() - invocationTimer, 0, 2000, 0, 400);
+      progress = constrain(progress, 0, 400);
+      
+      translate(width/2 - 200, 100);
+      
+      // Fondo
+      fill(0, 0, 0, 200);
+      stroke(255, 50, 50);
+      strokeWeight(2);
+      rect(0, 0, 400, 20, 10);
+      
+      // Relleno
+      noStroke();
+      fill(255, 50, 50);
+      rect(2, 2, progress * 0.99, 16, 8);
+      
+      // Texto
+      fill(255);
+      textSize(18);
+      textAlign(CENTER, BOTTOM);
+      textStyle(BOLD);
+      text("⚠️ RITUAL DE INVOCACIÓN ⚠️", 200, -5);
+      pop();
+  }
 }
 
 function getCurrentBot() {
