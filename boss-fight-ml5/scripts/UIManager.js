@@ -5,6 +5,7 @@
 class UIManager {
   constructor() {
     this.icons = {
+      'BASIC': { x: width - 230, y: height - 100, color: color(255, 200, 0), readyPulse: 0, shakeFrames: 0 },
       'BLUE': { x: width - 150, y: height - 100, color: color(0, 150, 255), readyPulse: 0, shakeFrames: 0 },
       'RED': { x: width - 70, y: height - 100, color: color(255, 50, 50), readyPulse: 0, shakeFrames: 0 }
     };
@@ -36,7 +37,7 @@ class UIManager {
   draw(attackManager) {
     push();
     
-    for (let type of ['BLUE', 'RED']) {
+    for (let type of ['BASIC', 'BLUE', 'RED']) {
       let icon = this.icons[type];
       let skill = attackManager.skills[type];
       
@@ -100,7 +101,8 @@ class UIManager {
       textAlign(CENTER, CENTER);
       textSize(18);
       textStyle(BOLD);
-      text(type === 'BLUE' ? 'Ao' : 'Aka', dx, dy - 45);
+      let label = type === 'BLUE' ? 'Ao' : (type === 'RED' ? 'Aka' : 'Hit');
+      text(label, dx, dy - 45);
     }
     pop();
   }

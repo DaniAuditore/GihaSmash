@@ -85,7 +85,7 @@ class AttackManager {
         this.skills[type].comboCount++;
         // Si llegó al tercer golpe del combo
         if (this.skills[type].comboCount >= 3) {
-             this.skills[type].cooldownDuration = 1000; // Penalización/Cooldown por combo completado
+             this.skills[type].cooldownDuration = 5000; // 5 segundos de Penalización/Cooldown por combo completado
              this.skills[type].comboCount = 0; // Reset para la próxima
         } else {
              this.skills[type].cooldownDuration = 200; // Golpes rápidos dentro del combo
