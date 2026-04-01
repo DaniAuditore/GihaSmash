@@ -1,1 +1,49 @@
+# ==============================================================================
+# GihaSmash - .gitignore
+# ==============================================================================
+
+# 1. Dependencias y Paquetes (NUNCA se suben)
+node_modules/
+jspm_packages/
+.npm/
+
+# 2. Entornos y Secretos (NUNCA se suben - ¡Seguridad!)
+.env
+.env.local
+.env.*.local
+*.pem
+credentials.json
+secret.json
+
+# 3. Archivos del Sistema Operativo (Basura local)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 4. Logs y Archivos Temporales (Cambian constantemente, no son código)
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 5. Build y Compilación (Se generan a partir del código, no se guardan)
+dist/
+build/
+out/
+
+# 6. Editores e IDEs (Configuraciones personales que no aplican al equipo)
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sw?
+
+# 7. OpenCode / Herramientas
 .atl/skill-registry.md
