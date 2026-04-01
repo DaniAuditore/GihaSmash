@@ -1,8 +1,19 @@
 ﻿/**
- * MahoragaBot hereda el movimiento base del Bot original pero intercepta 
- * el daño y físicas con lógica de reducción adaptativa.
+ * Entidad de jefe avanzado que hereda de Bot. Implementa IA agresiva (dashes, saltos dobles) 
+ * y un sistema de adaptación de daño mediante el AdaptationManager.
+ * 
+ * @class MahoragaBot
+ * @extends Bot
  */
 class MahoragaBot extends Bot {
+  /**
+   * Inicializa el jefe con estadísticas sobredimensionadas y multiplicadores de ola.
+   * 
+   * @param {number} x - Coordenada X inicial de aparición.
+   * @param {number} y - Coordenada Y inicial de aparición.
+   * @param {AdaptationManager} adaptationManager - Instancia que gestiona la inmunidad progresiva.
+   * @param {number} [waveMultiplier=1] - Multiplicador de escalado para HP y velocidad base.
+   */
   constructor(x, y, adaptationManager, waveMultiplier = 1) {
     super(x, y, waveMultiplier);
     this.adaptationManager = adaptationManager;
@@ -20,6 +31,15 @@ class MahoragaBot extends Bot {
     this.dashTimer = 0;
   }
 
+  /**
+   * Aplica físicas de gravedad, IA de persecución constante y ataques especiales (Dash/Cleave).
+   * 
+   * @param {FXManager} fxManager - Controlador de efectos visuales (screenshake, hitstop).
+   * @param {Object} platform - Instancia de la plataforma con datos AABB (x, y, w, h).
+   * @param {number} [timeMod=1.0] - Modificador de flujo temporal (ej. Expansión de Dominio = 0.1).
+   * @param {Object} [targetBox=null] - Hitbox AABB del objetivo (Mano del jugador) {x, y, w, h}.
+   * @returns {void} Retorna prematuramente si hay hitstop activo o el bot está muerto.
+   */
   update(fxManager, platform, timeMod = 1.0, targetBox = null) {
     // 1. Ejecutar físicas y lógica base
     super.update(fxManager, platform, timeMod, targetBox);
@@ -127,7 +147,16 @@ class MahoragaBot extends Bot {
     pop();
   }
 
-  // Intercepción del Hit para escalado de físicas
+  /**
+   * Procesa el impacto de un ataque. Intercepta el daño y lo reduce matemáticamente 
+   * según la efectividad actual del AdaptationManager, aplicando luego los vectores de knockback.
+   * 
+   * @param {number} amount - Cantidad de daño base bruto.
+   * @param {number} sourceX - Coordenada X del origen del ataque para cálculo de vector direccional.
+   * @param {FXManager} fx - Gestor para el spawn de partículas y screenshake.
+   * @param {string} type - Identificador del ataque ('BASIC', 'BLUE', 'RED', 'PURPLE').
+   * @returns {void} Falla silenciosamente (no hace nada) si el bot ya está en estado 'HIT' o hp <= 0.
+   */
   takeDamage(amount, sourceX, fx, type) {
     // 1. Obtener la inmunidad actual (1.0 = Daño total, 0.1 = Casi inmune)
     let effectiveness = this.adaptationManager.getModifier(type);

@@ -1,11 +1,13 @@
 /**
- * Analiza gestos discretos a partir de la geometría de Handpose.
- * Utiliza distancias euclidianas y filtros de rebote (debounce).
+ * Motor de heurísticas matemáticas para inferir gestos físicos evaluando 
+ * distancias euclidianas 2D entre los nodos clave (keypoints) de la mano.
+ * 
  * @class GestureAnalyzer
  */
 class GestureAnalyzer {
   /**
-   * Crea el analizador con un buffer temporal y estado de cooldown.
+   * Inicializa el analizador estableciendo los umbrales de confianza y el 
+   * buffer temporal de estabilización (evita falsos positivos por parpadeo de ML5).
    */
   constructor() {
     this.buffer = [];
@@ -21,13 +23,14 @@ class GestureAnalyzer {
   }
 
   /**
-   * Procesa la malla de handpose evaluando heurísticas euclidianas.
-   * Filtra latencia utilizando frames continuos para evitar ráfagas falsas.
-   * @param {Object} hand - Predicción en crudo devuelta por MediaPipe/TFJS.
-   * @returns {string} ID del Gesto dominante ('FIST', 'BLUE', 'RED', 'NONE')
-   * @performance Ejecución síncrona a 60hz, sujeta directamente a la integridad de los tensores de ML5.
+   * Clasifica un array de keypoints de ML5 en un gesto discreto ('FIST', 'PEACE', etc.).
+   * Requiere confirmación sostenida de frames consecutivos antes de despachar el estado.
+   * 
+   * @param {Object} hand - Objeto de predicción de ML5 Handpose (debe contener el array `keypoints`).
+   * @param {boolean} [isSecondary=false] - Indica si evalúa la segunda mano detectada (para combos).
+   * @returns {string} El identificador constante del gesto detectado (ej. 'BLUE', 'RED', 'NONE').
    */
-  analyze(hand) {
+  analyze(hand, isSecondary = false) {
     if (!hand || !hand.keypoints) {
       this.currentGesture = 'NONE';
       return this.currentGesture;

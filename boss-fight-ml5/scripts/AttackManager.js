@@ -1,11 +1,12 @@
 /**
- * Controla el flujo de ataques y tiempos de espera (Cooldown).
- * Implementa la lógica de 'Input Buffering' para la ventana de tolerancia.
+ * Controlador lógico de las técnicas del jugador. Gestiona cooldowns de habilidades, 
+ * combos dinámicos y la ventana de input buffering (200ms) para una respuesta fluida.
+ * 
  * @class AttackManager
  */
 class AttackManager {
   /**
-   * Instancia contadores base e inicializa duraciones (en milisegundos).
+   * Inicializa los diccionarios de cooldowns (ms) y los contadores de combo.
    */
   constructor() {
     this.skills = {
@@ -18,15 +19,17 @@ class AttackManager {
   }
 
   /**
-   * Intenta disparar gestionando el Input-Buffer si el usuario anticipó la recuperación.
-   * @param {string} type - Tipo de magia de combate ('RED', 'BLUE', 'PURPLE').
+   * Intenta disparar un ataque verificando su disponibilidad de recarga. Si está 
+   * a punto de recargarse, lo almacena temporalmente (Input Buffering).
+   * 
+   * @param {string} type - Tipo de ataque ('BASIC', 'RED', 'BLUE', 'PURPLE').
    * @param {number} x - Abscisa donde detonará el efecto físico.
-   * @param {number} y -  Coordenada paralela a x.
-   * @param {Object} bot - Receptor de la fuerza física y daño en memoria.
-   * @param {Object} fx - Gestor de renderizado Juice.
-   * @param {Object} uiManager - Responsable del parpadeo visual en pantalla tras cooldown fallido.
-   * @param {Object} audioManager - Responsable del sonido.
-   * @returns {boolean} Emisión limpia sin fallo técnico o temporal.
+   * @param {number} y - Coordenada paralela a X.
+   * @param {Bot|MahoragaBot} bot - Instancia enemiga que recibirá el daño en memoria.
+   * @param {FXManager} fx - Gestor de renderizado Juice (partículas/hitstop).
+   * @param {UIManager} uiManager - Responsable de renderizar penalizaciones en UI (Denial).
+   * @param {AudioManager} audioManager - Responsable de despachar el SFX correspondiente.
+   * @returns {boolean} `true` si el ataque se ejecutó o se encoló en el buffer. `false` si hay cooldown activo.
    */
   tryAttack(type, x, y, bot, fx, uiManager, audioManager) {
     if (!this.skills[type]) return false;
@@ -61,7 +64,14 @@ class AttackManager {
     }
   }
 
-  // Verifica el buffer cada frame en el main loop
+  /**
+   * Bucle constante que revisa si existe una técnica en el Input Buffer lista para
+   * despacharse automáticamente una vez vencido el bloqueo del cooldown.
+   * 
+   * @param {UIManager} uiManager - Referencia al gestor de UI.
+   * @param {AudioManager} audioManager - Referencia al gestor de Audio.
+   * @returns {void}
+   */
   update(uiManager, audioManager) {
     let now = millis();
     for (let type in this.skills) {
