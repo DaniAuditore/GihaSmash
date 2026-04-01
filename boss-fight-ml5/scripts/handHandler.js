@@ -15,7 +15,7 @@ class HandHandler {
     
     // Inicialización ML5 Handpose Next-Gen
     const options = { 
-        maxHands: 1, 
+        maxHands: 2,
         flipped: false
     };
 

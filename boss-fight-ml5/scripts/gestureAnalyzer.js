@@ -66,12 +66,20 @@ class GestureAnalyzer {
     // 4. EXPANSIÓN DE DOMINIO: Dedos cruzados (Paz + Medio e Índice muy juntos).
     let isCrossed = isPeace && indexMiddleDist < 25;
 
+    // 5. ATAQUE BÁSICO (Karate Chop / Mano de Canto Abierta)
+    // Validamos que los dedos estén extendidos pero muy juntos, simulando un "canto"
+    let dIndexMiddle = dist(indexTip.x, indexTip.y, middleTip.x, middleTip.y);
+    let dMiddleRing = dist(middleTip.x, middleTip.y, ringTip.x, ringTip.y);
+    let topToBottomDist = dist(indexTip.x, indexTip.y, pinkyTip.x, pinkyTip.y);
+    let isBasicAttack = isOpenPalm && dIndexMiddle < 40 && dMiddleRing < 40 && topToBottomDist < 100;
+
     let rawDetection = 'NONE';
     
     // Switch de Prioridad: El Puño tiene máxima prioridad para evitar spam al mover la mano
     if (isFist) rawDetection = 'FIST';
     else if (isCrossed) rawDetection = 'DOMAIN';
     else if (isPeace) rawDetection = 'PURPLE_ATTEMPT';
+    else if (isBasicAttack) rawDetection = 'BASIC_ATTACK';
     else if (isPinch) rawDetection = 'BLUE';
     else if (isOpenPalm) rawDetection = 'RED';
 
@@ -137,6 +145,11 @@ class GestureAnalyzer {
     if (gesture === 'DOMAIN') {
         this.lastInput = 'DOMAIN';
         return 'DOMAIN';
+    }
+
+    if (gesture === 'BASIC_ATTACK') {
+        this.lastInput = 'BASIC_ATTACK';
+        return 'BASIC_ATTACK';
     }
 
     if (gesture === 'PURPLE_ATTEMPT') {

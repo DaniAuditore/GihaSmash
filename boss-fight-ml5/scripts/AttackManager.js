@@ -9,6 +9,7 @@ class AttackManager {
    */
   constructor() {
     this.skills = {
+      'BASIC': { lastTime: 0, cooldownDuration: 500, bufferTimer: 0 },
       'BLUE': { lastTime: 0, cooldownDuration: 2000, bufferTimer: 0 },
       'RED': { lastTime: 0, cooldownDuration: 5000, bufferTimer: 0 },
       'PURPLE': { lastTime: 0, cooldownDuration: 10000, bufferTimer: 0 } // Extra p/ futuro
@@ -73,7 +74,9 @@ class AttackManager {
     this.skills[type].lastTime = now; // Reiniciar cooldown
 
     // Lógica de daño según la técnica
-    if (type === 'BLUE') {
+    if (type === 'BASIC') {
+        bot.takeDamage(5, x, fx, 'BASIC');
+    } else if (type === 'BLUE') {
         bot.takeDamage(10, x, fx, 'BLUE');
     } else if (type === 'RED') {
         bot.takeDamage(20, x, fx, 'RED');
