@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Entidad de jefe avanzado que hereda de Bot. Implementa IA agresiva (dashes, saltos dobles)
  * y un sistema de adaptación de daño mediante el AdaptationManager.
  *
@@ -166,10 +166,10 @@ class MahoragaBot extends Bot {
 
     // Si es técnica maldita, el empuje (físicas) disminuye severamente
     if (type === 'RED') {
-      this.velocityX *= effectiveness;
+      this.vx *= effectiveness;
     } else if (type === 'BLUE') {
       // En azul, contrarrestamos en tiempo real con una fuerza opuesta temporal
-      this.velocityX += (sourceX > this.x ? -2 : 2) * (1 - effectiveness);
+      this.vx += (sourceX > this.x ? -2 : 2) * (1 - effectiveness);
     }
 
     // Registrar para la rueda de adaptación
