@@ -20,7 +20,6 @@ let invocationTimer = 0;
 
 // Variables Riesgo Real (Player HP)
 let playerHP = 100;
-let playerHitbox;
 let gameState = 'PLAYING'; // 'PLAYING', 'DEFEAT'
 let lastHitTime = 0; // Cooldown de invulnerabilidad jugador iFrames
 
@@ -82,9 +81,6 @@ function setup() {
   uiManager = new UIManager();
   attackManager = new AttackManager();
   adaptationManager = new AdaptationManager();
-  
-  // Establecer zona de castigo del jugador (Centro Abajo)
-  playerHitbox = { x: width/2 - 100, y: height - 50, w: 200, h: 50 };
 
   // Precargar estrellas para la Expansión de Dominio
   for (let i = 0; i < 150; i++) {
@@ -115,19 +111,19 @@ function drawDomain() {
   pop();
 }
 
-function updateGameState() {
+function updateGameState(attackBox) {
   if (gameState === 'DEFEAT') return;
 
-  // IA y Jugador AABB vs Hitbox Vulnerable
+  // IA y Jugador AABB vs Hand Hitbox Vulnerable
   let activeBot = getCurrentBot();
-  if (activeBot) {
+  if (activeBot && attackBox && handHandler.isTracking) {
       if (
-          activeBot.x < playerHitbox.x + playerHitbox.w &&
-          activeBot.x + activeBot.w > playerHitbox.x &&
-          activeBot.y < playerHitbox.y + playerHitbox.h &&
-          activeBot.y + activeBot.h > playerHitbox.y
+          activeBot.x < attackBox.x + attackBox.w &&
+          activeBot.x + activeBot.w > attackBox.x &&
+          activeBot.y < attackBox.y + attackBox.h &&
+          activeBot.y + activeBot.h > attackBox.y
       ) {
-          // El Bot toca la barrera del jugador. 
+          // El Bot toca la MANO del jugador. 
           // Administramos iFrames (ej: daño 1 vez cada 500ms)
           if (millis() - lastHitTime > 500) {
               playerHP -= 20; 
@@ -143,6 +139,20 @@ function updateGameState() {
 }
 
 function draw() {
+  // 1. Extraer ML5 SIEMPRE para permitir reinicios por gestos
+  let currentHand = null;
+  let confidentHands = handHandler.predictions.filter(hand => hand && hand.confidence >= 0.8);
+  if (confidentHands.length > 0) {
+      currentHand = confidentHands[0];
+  }
+  let gesture = gestureAnalyzer.analyze(currentHand);
+  
+  let secondGesture = 'NONE';
+  if (confidentHands.length >= 2) {
+      secondGesture = gestureAnalyzer.analyze(confidentHands[1], true);
+  }
+
+  // --- GAME OVER STATE ---
   if (gameState === 'DEFEAT') {
       background(50, 0, 0);
       fill(255);
@@ -150,10 +160,22 @@ function draw() {
       textAlign(CENTER, CENTER);
       text("DEFEAT", width/2, height/2);
       textSize(30);
-      text("La Adapatación de Mahoraga fue absoluta.", width/2, height/2 + 60);
+      text("Haz el signo de la Paz (✌️) para reiniciar.", width/2, height/2 + 60);
+      
+      // Permitir Restart
+      if (gesture === 'PURPLE_ATTEMPT' || gesture === 'PURPLE') {
+          // Soft Reset
+          playerHP = 100;
+          gameState = 'PLAYING';
+          isMahoragaActive = false;
+          domainActive = false;
+          bot = new Bot(platform.x + platform.w / 2 - 25, platform.y - 50);
+          fx.triggerScreenshake(20, 20); // Juice de inicio
+      }
       return; 
   }
 
+  // --- PLAYING STATE ---
   if (domainActive && millis() > domainEndTime) {
       domainActive = false;
   }
@@ -162,22 +184,6 @@ function draw() {
       drawDomain(); // Shader ligero de estrellas para no perder FPS
   } else {
       background(20, 20, 25);
-  }
-
-  // Pre-analizar la mano para saber el gesto antes de mover el cursor
-  let currentHand = null;
-  let confidentHands = handHandler.predictions.filter(hand => hand && hand.confidence >= 0.8);
-  if (confidentHands.length > 0) {
-      currentHand = confidentHands[0];
-  }
-  
-  // Procesamos la primera mano para combate regular/navegación
-  let gesture = gestureAnalyzer.analyze(currentHand);
-  
-  // Procesamos la segunda mano si existe para ver si *ambas* son puños
-  let secondGesture = 'NONE';
-  if (confidentHands.length >= 2) {
-      secondGesture = gestureAnalyzer.analyze(confidentHands[1], true); // bool parametrizado opcional en caso de que modifiques el analizer
   }
 
   // Lógica de invocación (Doble puño cerrado simulado por ML5 + Timer)
@@ -196,13 +202,13 @@ function draw() {
   }
 
   // Actualizar Estados Centrales (Física + Combate)
-  updateGameState(); 
+  let attackBox = handHandler.isTracking ? handHandler.getAttackBounds() : null;
+  updateGameState(attackBox); 
   
   // 1. Inputs y Actualizaciones (Le pasamos el gesto para el bloqueo de navegación)
   handHandler.update(width, height, gesture);
   
-  if (gesture !== 'NONE' && gesture !== 'FIST' && gesture !== 'COOLDOWN') {
-      let attackBox = handHandler.getAttackBounds();
+  if (gesture !== 'NONE' && gesture !== 'FIST' && gesture !== 'COOLDOWN' && attackBox) {
       let didFire = false;
 
       // Centralized attack triggering (ignoring AABB target to allow global ritual hits)
@@ -228,7 +234,7 @@ function draw() {
   attackManager.update(uiManager);
   // Ralentización del bot por Expansión de Dominio
   let currentDomainMod = domainActive ? 0.1 : 1.0;
-  getCurrentBot().update(fx, platform, currentDomainMod);
+  getCurrentBot().update(fx, platform, currentDomainMod, attackBox);
 
   // 3. Render
   push();
@@ -294,11 +300,6 @@ function drawRiesgoReal() {
   fill(255);
   textSize(20);
   text(`HP JUGADOR: ${playerHP}`, 20, 30);
-  
-  // Dibujar hitbox real jugador semitransparente
-  fill(255, 0, 0, 40);
-  stroke(255, 0, 0, 150);
-  rect(playerHitbox.x, playerHitbox.y, playerHitbox.w, playerHitbox.h);
 
   // Barra de progreso invisible si el usuario sostiene la pose
   if (invocationTimer > 0 && !isMahoragaActive) {

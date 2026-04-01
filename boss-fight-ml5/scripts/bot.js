@@ -28,6 +28,10 @@ class Bot {
     this.state = 'IDLE'; // IDLE, JUMPING, HIT
     this.hitFrame = 0; // Temporizador nativo del motor de juego
     
+    // IA Agresiva
+    this.isLunging = false;
+    this.lungeWaitFrame = 0;
+    
     // Jugo
     this.squash = 1.0;
     this.stretch = 1.0;
@@ -55,6 +59,7 @@ class Bot {
     this.y += this.vy;
 
     // Colisión AABB de Suelo (Isla Central)
+    // Se ignora si está ejecutando un ataque en picada
     let isOverPlatform = (this.x + this.w > platform.x) && (this.x < platform.x + platform.w);
 
     if (this.vy >= 0 && isOverPlatform && (this.y + this.h >= platform.y) && (this.y + this.h - this.vy <= platform.y + 20)) {
@@ -88,6 +93,7 @@ class Bot {
       this.vx = 0;
       this.hp -= 20; // Penalización por caer
       this.state = 'JUMPING';
+      this.isLunging = false;
   }
 
   /**
@@ -104,7 +110,7 @@ class Bot {
     }
   }
 
-  update(fxManager, platform, timeMod = 1.0) {
+  update(fxManager, platform, timeMod = 1.0, targetBox = null) {
     // Expansión de Dominio: Ralentizar el update drásticamente (Efecto stop-motion)
     if (timeMod < 1.0 && frameCount % Math.floor(1 / timeMod) !== 0) return;
 
@@ -122,14 +128,52 @@ class Bot {
         this.state = 'IDLE';
     }
 
+    if (!this.onGround) {
+        // En el aire
+    } else {
+        this.isLunging = false; // Reset lunge al tocar suelo
+    }
+
     // IA reactiva: Movimiento horizontal y saltos si NO está en HIT
-    if (this.onGround && this.state !== 'HIT' && frameCount % 60 === 0 && random() > 0.4) {
-      // Intenta mantenerse central, o saltar si lo empujan
-      let toCenter = (platform.x + platform.w / 2) - this.x;
-      this.vx = (toCenter > 0 ? 1 : -1) * random(5, 12);
-      if (random() > 0.5) {
-          this.jump();
-      }
+    if (this.onGround && this.state !== 'HIT' && !this.isLunging) {
+        
+        // Lógica de ataque "Lunge" / Anti-Air contra la Mano
+        if (targetBox) {
+            let botCenterX = this.x + this.w / 2;
+            let targetCenterX = targetBox.x + targetBox.w / 2;
+            let targetCenterY = targetBox.y + targetBox.h / 2;
+            
+            let distX = Math.abs(botCenterX - targetCenterX);
+            let distY = this.y - targetCenterY; // Positivo si la mano está ARRIBA del bot
+            
+            // Si la mano está cerca horizontalmente y por encima del bot
+            if (distX < 150 && distY > 0 && distY < 300) {
+                if (this.lungeWaitFrame === 0) {
+                    this.lungeWaitFrame = frameCount; // Iniciar "telegraph"
+                    this.vx = 0; // Detenerse
+                    this.squash = 0.7; // Agacharse para saltar
+                    this.stretch = 1.3;
+                } else if (frameCount - this.lungeWaitFrame > 20) { // 0.3 seg de aviso
+                    this.isLunging = true;
+                    this.vy = -18; // Gran salto hacia la mano
+                    this.vx = (targetCenterX > botCenterX ? 1 : -1) * 8; // Perseguir la mano
+                    this.onGround = false;
+                    this.lungeWaitFrame = 0;
+                }
+                return; // Bloquear patrullaje mientras planea el ataque
+            } else {
+                this.lungeWaitFrame = 0; // Cancelar ataque si la mano huye
+            }
+        }
+
+        // Movimiento normal errático
+        if (frameCount % 60 === 0 && random() > 0.4) {
+          let toCenter = (platform.x + platform.w / 2) - this.x;
+          this.vx = (toCenter > 0 ? 1 : -1) * random(5, 12);
+          if (random() > 0.5) {
+              this.jump();
+          }
+        }
     }
   }
 
@@ -151,7 +195,18 @@ class Bot {
     // Aplicar deformación visual
     scale(this.stretch, this.squash);
     
-    fill(this.state === 'HIT' ? color(255, 0, 0) : (this.state === 'JUMPING' ? color(0, 150, 255) : color(0, 200, 100)));
+    let botColor;
+    if (this.state === 'HIT') {
+        botColor = color(255, 0, 0);
+    } else if (this.isLunging || this.lungeWaitFrame > 0) {
+        botColor = color(255, 100, 0); // Color de aviso/peligro
+    } else if (this.state === 'JUMPING') {
+        botColor = color(0, 150, 255);
+    } else {
+        botColor = color(0, 200, 100);
+    }
+    
+    fill(botColor);
     stroke(255);
     strokeWeight(2);
     
